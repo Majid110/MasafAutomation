@@ -12,7 +12,8 @@ Some Aegisub automation scripts specially designed for Right-To-Left language su
 * Rtl Corrector - Selected
 * Undo Rtl Corrector - Selected
 * Show Rtl Editor
-* Unify Background lines
+* Unify background lines
+* Add Code to selected lines
 
 ## Screenshots:
 

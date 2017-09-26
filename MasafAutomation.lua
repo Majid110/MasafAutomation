@@ -13,7 +13,8 @@ rtl_corrector_script_name = tr"Masaf/Rtl Corrector - All line"
 rtl_corrector_selected_line_script_name = tr"Masaf/Rtl Corrector - Selected"
 undo_rtl_correction_script_name = tr"Masaf/Undo Rtl Corrector - Selected"
 show_rtl_editor_script_name = tr"Masaf/Show Rtl Editor"
-unify_background_lines_script_name = tr"Masaf/Unify Background lines"
+unify_background_lines_script_name = tr"Masaf/Unify Background Lines"
+add_code_to_selected_lines_script_name = tr"Masaf/Add Code To Selected Lines"
 
 script_description = tr"Some Aegisub automation scripts specially designed for Right-To-Left language subtitles"
 script_author = "Majid Shamkhani"
@@ -391,6 +392,20 @@ function UnifyBackgroundLines(subs, selected)
 
 	aegisub.set_undo_point(unify_background_lines_script_name)
 end
+
+--------------------------- Add Code To Selected Lines ------------------------------
+function AddCodeToSelectedLines(subs, selected)
+
+	local code = GetTextFromUser()
+	if code == nil then return end
+	for i = 1, #selected, 1 do
+		local line = subs[selected[i]]
+		line.text = code..line.text
+		subs[selected[i]] = line
+	end
+	aegisub.set_undo_point(add_code_to_selected_lines_script_name)
+end
+
 ------------------------- End of Main Methods -------------------
 
 -- <<<<<<<<<<<<<<<<<<<<< Related Methods >>>>>>>>>>>>>>>>>>>>>>>>
@@ -587,7 +602,7 @@ function ChangeLineTime(text, line1, line2)
 	start=line1.start_time
 	endt=line1.end_time
 	dur=endt-start
-	aegisub.log(dur)
+	--aegisub.log(dur)
 	l=dur/string.len(text)
 	line1.end_time = start + string.len(line1.text)*l
 	line2.start_time = line1.end_time
@@ -642,6 +657,18 @@ function GetCharAtIndex(text, index)
     -- returns start, end, SplitCharIndex
     return parts[index][1], parts[index][2], parts[index][3]
   end
+	return nil
+end
+
+function GetTextFromUser()
+	config = {
+		{class="label", label="\r\n Enter your code here: \r\n", x=0, y=0},
+		{class="textbox", name="txtCode", value="{\\ }", x=0, y=1, width=10}
+	}
+	btn, result = aegisub.dialog.display(config, {"OK", "Cancel"}, {ok="OK", cancel="Cancel"})
+	if btn then
+		return result.txtCode
+	end
 	return nil
 end
 
@@ -804,4 +831,5 @@ aegisub.register_macro(rtl_corrector_script_name, tr"Corercts Rtl display proble
 aegisub.register_macro(rtl_corrector_selected_line_script_name, tr"Corercts Rtl display problem for selected line", RtlCorrectorSelectedLine)
 aegisub.register_macro(undo_rtl_correction_script_name, tr"Undo Rtl correction", UndoRtlCorrection)
 aegisub.register_macro(show_rtl_editor_script_name, tr"Show Rtl editor", ShowRtlEditor)
-aegisub.register_macro(unify_background_lines_script_name, tr"Unify Background lines", UnifyBackgroundLines)
+aegisub.register_macro(unify_background_lines_script_name, tr"Unify Background Lines", UnifyBackgroundLines)
+aegisub.register_macro(add_code_to_selected_lines_script_name, tr"Add Code To Selected Lines", AddCodeToSelectedLines)
