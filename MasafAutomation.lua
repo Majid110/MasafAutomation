@@ -40,7 +40,7 @@ function AddBackground(subs)
 	local groupCount = 0
 	local lastLineCount = 0
 
-	local bgShape, doExit = getBackgroundLine(subs)
+	local bgShape, doExit = getBackgroundLine(subs, styles)
 	
 	-- Missing background shape
 	-- Adding new shape line and exit
@@ -106,6 +106,7 @@ function AddSelectedBackground(subs, selected)
 
 	if #selected > 1 then return end
 
+	local meta, styles = karaskel.collect_head(subs)
 	local line = subs[selected[1]]
 
 	local meta, styles = karaskel.collect_head(subs)
@@ -117,7 +118,7 @@ function AddSelectedBackground(subs, selected)
 	local groupCount = 0
 	local lastLineCount = 0
 
-	local bgShape, doExit = getBackgroundLine(subs)
+	local bgShape, doExit = getBackgroundLine(subs, styles)
 	
 	-- Missing background shape
 	-- Adding new shape line and exit
@@ -477,11 +478,12 @@ function getVideoSize()
 	return xres, yres
 end
 
-function getBackgroundLine(subs)
+function getBackgroundLine(subs, styles)
 	--aegisub.debug.out(subs[1].text)
 	local firstLine, i = getFirstSubtitleLine(subs)
 
 	if firstLine == nil or string.match(firstLine.text, bgPattern) == nil then
+		createBackgroundStyle(subs, styles)
 		createBackgroundLine(subs, firstLine, i)
 		ShowMessage(
 tr[[The background shape is missing and now added as first line of subtitle.
@@ -540,6 +542,39 @@ function setLastGroupBackgroundEndTime(subs, groupBackgroundIndex, periorEndTime
 	local line = subs[groupBackgroundIndex]
 	line.end_time = periorEndTime
 	subs[groupBackgroundIndex] = line
+end
+
+function createBackgroundStyle(subs, styles)
+	if styles["TextBackground"] then return end
+	local style = {
+			class = "style",
+			section = "V4+ Styles",
+			name = "TextBackground",
+			fontname = "Arial",
+			fontsize = "20",
+			color1 = "&H46000000&",
+			color2 = "&H000000FF&",
+			color3 = "&H00000000&",
+			color4 = "&H00000000&",
+			bold = false,
+			italic = false,
+			underline = false,
+			strikeout = false,
+			scale_x = 100,
+			scale_y = 100,	
+			spacing = 0,
+			angle = 0,
+			borderstyle = 1,
+			outline = 0,
+			shadow = 0,
+			align = 2,
+			margin_l = 10,
+			margin_r = 10,
+			margin_t = 10,
+			margin_b = 10,
+			encoding = 1
+		}
+	subs.insert(styles.n, style)
 end
 
 function createBackgroundLine(subs, line, idx)
