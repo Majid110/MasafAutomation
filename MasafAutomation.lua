@@ -18,7 +18,7 @@ add_code_to_selected_lines_script_name = tr"Masaf/Add Code To Selected Lines"
 
 script_description = tr"Some Aegisub automation scripts specially designed for Right-To-Left language subtitles"
 script_author = "Majid Shamkhani"
-script_version = "1.2"
+script_version = "1.3"
 
 -- <<<<<<<<<<<<<<<<<<<<<<<<< Main Methods >>>>>>>>>>>>>>>>>>>>>>>>>
 
@@ -255,7 +255,7 @@ end
 
 --------------------------- RtlCorrector ---------------------
 
-local SpecialChars = [[%.,،%?؟«»%(%)!%-:]]
+local SpecialChars = [[%.,،%?؟«»!%-:]]
 local StickyChars = [[%.,،%?؟:؛!;]]
 local StartingBracketChars = [[%({%[<«]]
 local EndingsBracketChars = [[%)}%]>»]]
@@ -723,7 +723,7 @@ function AddRleToEachNoneAlphabeticChars(s)
     local rleChar = utf8.char(0x202B)
 
     local replaced = utf8.gsub(s, pattern, rleChar.."%1")
-    return replaced
+    return rleChar..replaced
 end
 
 function RemoveDoubleSpace(s)
