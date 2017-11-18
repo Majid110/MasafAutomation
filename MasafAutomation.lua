@@ -256,7 +256,7 @@ end
 --------------------------- RtlCorrector ---------------------
 
 local SpecialChars = [[%.,،%?؟«»!%-:]]
-local StickyChars = [[%.,،%?؟:؛!;]]
+local PunctuationMarks = [[%.,،%?؟:؛!;]]
 local StartingBracketChars = [[%({%[<«]]
 local EndingsBracketChars = [[%)}%]>»]]
 local CodePattern = "({.-})"
@@ -280,8 +280,8 @@ function RtlCorrector(subs)
 						--t = Trim(t)
 						t = RemoveRle(t)
 						t = RemoveDoubleSpace(t)
-						t = RemoveSpacesBeforeStickyChars(t)
-						t = AddRequiredSpaceAfterStickyChars(t)
+						t = RemoveSpacesBeforePunctuationMarks(t)
+						t = AddRequiredSpaceAfterPunctuationMarks(t)
 						t = AddRequiredSpaceBeforeStartingBrackets(t)
 						t = RemoveSpaceAfterStartingBrackets(t)
 						t = RemoveSpaceBeforeEndingBrackets(t)
@@ -320,7 +320,7 @@ function RtlCorrectorSelectedLine(subs, selected)
 				--t = Trim(t)
 				t = RemoveRle(t)
 				t = RemoveDoubleSpace(t)
-				t = RemoveSpacesBeforeStickyChars(t)
+				t = RemoveSpacesBeforePunctuationMarks(t)
 				t = AddRequiredSpaceBeforeStartingBrackets(t)
 				t = RemoveSpaceAfterStartingBrackets(t)
 				t = RemoveSpaceBeforeEndingBrackets(t)
@@ -722,7 +722,8 @@ function AddRleToEachNoneAlphabeticChars(s)
 	-- Start of right to left embeding character
     local rleChar = utf8.char(0x202B)
 
-    local replaced = utf8.gsub(s, pattern, rleChar.."%1")
+	local replaced = utf8.gsub(s, pattern, rleChar.."%1")
+	replaced = utf8.gsub(replaced, "\\N", "\\N"..rleChar)
     return rleChar..replaced
 end
 
@@ -733,8 +734,8 @@ function RemoveDoubleSpace(s)
 	return s
 end
 
-function RemoveSpacesBeforeStickyChars(s)
-	local pattern = "(%s+)([{"..StickyChars.."}])"
+function RemoveSpacesBeforePunctuationMarks(s)
+	local pattern = "(%s\"+)([{"..PunctuationMarks.."}])"
 	local replaced = s
 	while utf8.match(replaced, pattern) do
 		replaced = utf8.gsub(replaced, pattern, "%2")
@@ -742,8 +743,8 @@ function RemoveSpacesBeforeStickyChars(s)
 	return replaced
 end
 
-function AddRequiredSpaceAfterStickyChars(s)
-	local pattern = "([{"..StickyChars.."}])([^%s{"..StickyChars.."}])"
+function AddRequiredSpaceAfterPunctuationMarks(s)
+	local pattern = "([{"..PunctuationMarks.."}])([^%s{"..PunctuationMarks.."}])"
 	local replaced = s
 	while utf8.match(replaced, pattern) do
 		replaced = utf8.gsub(replaced, pattern, "%1 %2")
@@ -751,8 +752,8 @@ function AddRequiredSpaceAfterStickyChars(s)
 	return replaced
 end
 
-function AddRequiredSpaceAfterStickyChars(s)
-	local pattern = "([{"..StickyChars.."}])([^%s{"..StickyChars.."}])"
+function AddRequiredSpaceAfterPunctuationMarks(s)
+	local pattern = "([{"..PunctuationMarks.."}])([^%s{"..PunctuationMarks.."}])"
 	local replaced = s
 	while utf8.match(replaced, pattern) do
 		replaced = utf8.gsub(replaced, pattern, "%1 %2")
@@ -779,7 +780,7 @@ function RemoveSpaceBeforeEndingBrackets(s)
 end
 
 function AddRequiredSpaceAfterEndingBrackets(s)
-	local pattern = "([{"..EndingsBracketChars.."}])([^%s{"..EndingsBracketChars..StickyChars..StartingBracketChars.."}])"
+	local pattern = "([{"..EndingsBracketChars.."}])([^%s{"..EndingsBracketChars..PunctuationMarks..StartingBracketChars.."\"}])"
 	local replaced = s
 	if utf8.match(replaced, pattern) then
 		replaced = utf8.gsub(replaced, pattern, "%1 %2")
