@@ -360,6 +360,8 @@ function ShowRtlEditor(subs, selected)
 	local result, text = OpenEditor(line.text)
 	
 	if not result then return end
+	-- Replace line break with \N
+	text = utf8.gsub(text, '\n', "\\N")
 	line.text = text
 	subs[selected[1]] = line
 
