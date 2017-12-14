@@ -8,17 +8,18 @@ local utf8 = require "utf8"
 add_background_script_name = tr"Masaf/Add All Backgrounds"
 add_selected_background_script_name = tr"Masaf/Add Selected Background"
 split_script_name = tr"Masaf/Split line"
-split_at_index_script_name = tr"Masaf/Split line at index"
-rtl_corrector_script_name = tr"Masaf/Rtl Corrector - All line"
-rtl_corrector_selected_line_script_name = tr"Masaf/Rtl Corrector - Selected"
-undo_rtl_correction_script_name = tr"Masaf/Undo Rtl Corrector - Selected"
+split_at_index_script_name = tr"Masaf/Split line at Index"
+rtl_corrector_script_name = tr"Masaf/Rtl Correction - All line"
+rtl_corrector_selected_line_script_name = tr"Masaf/Rtl Correction - Selected"
+undo_rtl_correction_script_name = tr"Masaf/Undo Rtl Correction - Selected"
 show_rtl_editor_script_name = tr"Masaf/Show Rtl Editor"
-unify_background_lines_script_name = tr"Masaf/Unify Background Lines"
-add_code_to_selected_lines_script_name = tr"Masaf/Add Code To Selected Lines"
+unify_background_lines_script_name = tr"Masaf/Unify Background lines"
+add_code_to_selected_lines_script_name = tr"Masaf/Add Code to Selected lines"
+remove_line_break_script_name = tr"Masaf/Remove line Breaks"
 
 script_description = tr"Some Aegisub automation scripts specially designed for Right-To-Left language subtitles"
 script_author = "Majid Shamkhani"
-script_version = "1.3"
+script_version = "1.4"
 
 -- <<<<<<<<<<<<<<<<<<<<<<<<< Main Methods >>>>>>>>>>>>>>>>>>>>>>>>>
 
@@ -406,6 +407,17 @@ function AddCodeToSelectedLines(subs, selected)
 	end
 	aegisub.set_undo_point(add_code_to_selected_lines_script_name)
 end
+
+--------------------------- Remove line Breaks ------------------------------
+function RemoveLineBreaks(subs, selected)
+	
+	if #selected > 1 then return end
+	local line = subs[selected[1]]
+	line.text = utf8.gsub(line.text, "\\N", " ")
+	subs[selected[1]] = line
+
+	aegisub.set_undo_point(remove_line_break_script_name)
+	end
 
 ------------------------- End of Main Methods -------------------
 
@@ -869,3 +881,4 @@ aegisub.register_macro(undo_rtl_correction_script_name, tr"Undo Rtl correction",
 aegisub.register_macro(show_rtl_editor_script_name, tr"Show Rtl editor", ShowRtlEditor)
 aegisub.register_macro(unify_background_lines_script_name, tr"Unify Background Lines", UnifyBackgroundLines)
 aegisub.register_macro(add_code_to_selected_lines_script_name, tr"Add Code To Selected Lines", AddCodeToSelectedLines)
+aegisub.register_macro(remove_line_break_script_name, tr"Remove line Breaks", RemoveLineBreaks)
