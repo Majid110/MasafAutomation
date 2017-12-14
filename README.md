@@ -7,13 +7,14 @@ Some Aegisub automation scripts specially designed for Right-To-Left language su
 * Add Selected Background
 * Add All Backgrounds
 * Split line
-* Split line at index
-* Rtl Corrector - All line
-* Rtl Corrector - Selected
-* Undo Rtl Corrector - Selected
+* Split line at Index
+* Rtl Correction - All line
+* Rtl Correction - Selected
+* Undo Rtl Correction - Selected
 * Show Rtl Editor
-* Unify background lines
-* Add Code to selected lines
+* Unify Background lines
+* Add Code to Selected lines
+* Remove line Breaks
 
 ## Screenshots:
 
