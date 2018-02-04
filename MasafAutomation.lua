@@ -9,17 +9,18 @@ add_background_script_name = tr"Masaf/Add All Backgrounds"
 add_selected_background_script_name = tr"Masaf/Add Selected Background"
 split_script_name = tr"Masaf/Split line"
 split_at_index_script_name = tr"Masaf/Split line at Index"
-rtl_corrector_script_name = tr"Masaf/Rtl Correction - All line"
-rtl_corrector_selected_line_script_name = tr"Masaf/Rtl Correction - Selected"
+rtl_correction_script_name = tr"Masaf/Rtl Correction - All line"
+rtl_correction_selected_line_script_name = tr"Masaf/Rtl Correction - Selected"
 undo_rtl_correction_script_name = tr"Masaf/Undo Rtl Correction - Selected"
 show_rtl_editor_script_name = tr"Masaf/Show Rtl Editor"
 unify_background_lines_script_name = tr"Masaf/Unify Background lines"
 add_code_to_selected_lines_script_name = tr"Masaf/Add Code to Selected lines"
 remove_line_break_script_name = tr"Masaf/Remove line Breaks"
+import_text_to_selected_lines = tr"Masaf/Import text to selected Lines"
 
 script_description = tr"Some Aegisub automation scripts specially designed for Right-To-Left language subtitles"
 script_author = "Majid Shamkhani"
-script_version = "1.4"
+script_version = "1.5"
 
 -- <<<<<<<<<<<<<<<<<<<<<<<<< Main Methods >>>>>>>>>>>>>>>>>>>>>>>>>
 
@@ -254,7 +255,7 @@ function SplitAtIndex(subs,selected)
 	return selected
 end
 
---------------------------- RtlCorrector ---------------------
+--------------------------- RtlCorrection ---------------------
 
 local SpecialChars = [[%.,،%?؟«»!%-:]]
 local PunctuationMarks = [[%.,،%?؟:؛!;]]
@@ -262,7 +263,7 @@ local StartingBracketChars = [[%({%[<«]]
 local EndingsBracketChars = [[%)}%]>»]]
 local CodePattern = "({.-})"
 
-function RtlCorrector(subs)
+function RtlCorrection(subs)
 
 	-- start processing lines
 	local i, n = 0
@@ -299,7 +300,7 @@ function RtlCorrector(subs)
 		end
 	end
 
-	aegisub.set_undo_point(rtl_corrector_script_name)
+	aegisub.set_undo_point(rtl_correction_script_name)
 end
 
 ------------------------- Rtl Corrector Selected Line -----------------------
@@ -336,7 +337,7 @@ function RtlCorrectorSelectedLine(subs, selected)
 		subs[selected[1]] = line
 	end
 
-	aegisub.set_undo_point(rtl_corrector_selected_line_script_name)
+	aegisub.set_undo_point(rtl_correction_selected_line_script_name)
 end
 
 ------------------------------ Undo Rtl Correction ----------------------------
@@ -419,7 +420,25 @@ function RemoveLineBreaks(subs, selected)
 	subs[selected[1]] = line
 
 	aegisub.set_undo_point(remove_line_break_script_name)
+end
+
+---------------------- Import Text to selected lines -------------------------
+function ImportTextToSelectedLines(subs, selected)
+	
+	if #selected == 0 then return end
+	local result, text = OpenEditor("")
+	
+	if not result then return end
+	local texts = text:split("\n")
+	for i = 1, #selected, 1 do
+		if i > table.getn(texts) then return end
+		local line = subs[selected[i]]
+		line.text = texts[i]
+		subs[selected[i]] = line
 	end
+
+	aegisub.set_undo_point(import_text_to_selected_lines)
+end	
 
 ------------------------- End of Main Methods -------------------
 
@@ -530,18 +549,18 @@ end
 
 function string:split( inSplitPattern, outResults )
  
-   if not outResults then
-      outResults = {}
-   end
-   local theStart = 1
-   local theSplitStart, theSplitEnd = string.find( self, inSplitPattern, theStart )
-   while theSplitStart do
-      table.insert( outResults, string.sub( self, theStart, theSplitStart-1 ) )
-      theStart = theSplitEnd + 1
-      theSplitStart, theSplitEnd = string.find( self, inSplitPattern, theStart )
-   end
-   table.insert( outResults, string.sub( self, theStart ) )
-   return outResults
+	if not outResults then
+		outResults = {}
+	end
+	local theStart = 1
+	local theSplitStart, theSplitEnd = string.find( self, inSplitPattern, theStart )
+	while theSplitStart do
+		table.insert( outResults, string.sub( self, theStart, theSplitStart-1 ) )
+		theStart = theSplitEnd + 1
+		theSplitStart, theSplitEnd = string.find( self, inSplitPattern, theStart )
+	end
+	table.insert( outResults, string.sub( self, theStart ) )
+	return outResults
 end
 
 function isStartTimeEqualsPeriorEndTime(line, periorEndTime)
@@ -561,33 +580,33 @@ end
 function createBackgroundStyle(subs, styles)
 	if styles["TextBackground"] then return end
 	local style = {
-			class = "style",
-			section = "V4+ Styles",
-			name = "TextBackground",
-			fontname = "Arial",
-			fontsize = "20",
-			color1 = "&H46000000&",
-			color2 = "&H000000FF&",
-			color3 = "&H00000000&",
-			color4 = "&H00000000&",
-			bold = false,
-			italic = false,
-			underline = false,
-			strikeout = false,
-			scale_x = 100,
-			scale_y = 100,	
-			spacing = 0,
-			angle = 0,
-			borderstyle = 1,
-			outline = 0,
-			shadow = 0,
-			align = 2,
-			margin_l = 10,
-			margin_r = 10,
-			margin_t = 10,
-			margin_b = 10,
-			encoding = 1
-		}
+		class = "style",
+		section = "V4+ Styles",
+		name = "TextBackground",
+		fontname = "Arial",
+		fontsize = "20",
+		color1 = "&H46000000&",
+		color2 = "&H000000FF&",
+		color3 = "&H00000000&",
+		color4 = "&H00000000&",
+		bold = false,
+		italic = false,
+		underline = false,
+		strikeout = false,
+		scale_x = 100,
+		scale_y = 100,	
+		spacing = 0,
+		angle = 0,
+		borderstyle = 1,
+		outline = 0,
+		shadow = 0,
+		align = 2,
+		margin_l = 10,
+		margin_r = 10,
+		margin_t = 10,
+		margin_b = 10,
+		encoding = 1
+	}
 	subs.insert(styles.n, style)
 end
 
@@ -602,7 +621,7 @@ function createBackgroundLine(subs, line, idx)
 end
 
 function cleanTags(text)
-    return string.gsub(text, [[{\.-}]], "")
+	return string.gsub(text, [[{\.-}]], "")
 end
 
 function isBackgroundLine(line)
@@ -721,20 +740,20 @@ function GetTextFromUser()
 	return nil
 end
 
------------------------ RtlCorrector Methods ---------------------
+----------------------- RtlCorrection Methods ---------------------
 
 function RemoveRle(s)
-    local rleChar = utf8.char(0x202B)
+	local rleChar = utf8.char(0x202B)
 
-    local replaced = utf8.gsub(s, rleChar, "")
-    return replaced
+	local replaced = utf8.gsub(s, rleChar, "")
+	return replaced
 end
 
 function AddRleToEachNoneAlphabeticChars(s)
-    local pattern = "([{"..SpecialChars.."}])"
+	local pattern = "([{"..SpecialChars.."}])"
 
 	-- Start of right to left embeding character
-    local rleChar = utf8.char(0x202B)
+	local rleChar = utf8.char(0x202B)
 
 	local replaced = utf8.gsub(s, pattern, rleChar.."%1")
 	replaced = utf8.gsub(replaced, "\\N", "\\N"..rleChar)
@@ -877,10 +896,11 @@ aegisub.register_macro(add_selected_background_script_name, tr"Adds background f
 aegisub.register_macro(add_background_script_name, tr"Adds background before every line", AddBackground)
 aegisub.register_macro(split_script_name, tr"Split selected lines", Split)
 aegisub.register_macro(split_at_index_script_name, tr"Split selected line at index", SplitAtIndex)
-aegisub.register_macro(rtl_corrector_script_name, tr"Corercts Rtl display problem for all line", RtlCorrector)
-aegisub.register_macro(rtl_corrector_selected_line_script_name, tr"Corercts Rtl display problem for selected line", RtlCorrectorSelectedLine)
+aegisub.register_macro(rtl_correction_script_name, tr"Corercts Rtl display problem for all line", RtlCorrection)
+aegisub.register_macro(rtl_correction_selected_line_script_name, tr"Corercts Rtl display problem for selected line", RtlCorrectorSelectedLine)
 aegisub.register_macro(undo_rtl_correction_script_name, tr"Undo Rtl correction", UndoRtlCorrection)
 aegisub.register_macro(show_rtl_editor_script_name, tr"Show Rtl editor", ShowRtlEditor)
 aegisub.register_macro(unify_background_lines_script_name, tr"Unify Background Lines", UnifyBackgroundLines)
 aegisub.register_macro(add_code_to_selected_lines_script_name, tr"Add Code To Selected Lines", AddCodeToSelectedLines)
 aegisub.register_macro(remove_line_break_script_name, tr"Remove line Breaks", RemoveLineBreaks)
+aegisub.register_macro(import_text_to_selected_lines, tr"Import text to selected lines", ImportTextToSelectedLines)
