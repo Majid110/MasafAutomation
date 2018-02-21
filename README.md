@@ -4,8 +4,7 @@ Some Aegisub automation scripts specially designed for Right-To-Left language su
 ![Masaf Automation](img/MasafAutomation.png)
 
 ## Scripts:
-* Add Selected Background
-* Add All Backgrounds
+* Add Backgrounds
 * Split line
 * Split line at Index
 * Rtl Correction - All line

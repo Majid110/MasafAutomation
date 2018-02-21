@@ -5,8 +5,7 @@ local tr = aegisub.gettext
 local utf8 = require "utf8"
 --local inspect = require "inspect"
 
-add_background_script_name = tr"Masaf/Add All Backgrounds"
-add_selected_background_script_name = tr"Masaf/Add Selected Background"
+add_background_script_name = tr"Masaf/Add Backgrounds"
 split_script_name = tr"Masaf/Split line"
 split_at_index_script_name = tr"Masaf/Split line at Index"
 rtl_correction_script_name = tr"Masaf/Rtl Correction - All line"
@@ -20,14 +19,13 @@ import_text_to_selected_lines = tr"Masaf/Import text to selected Lines"
 
 script_description = tr"Some Aegisub automation scripts specially designed for Right-To-Left language subtitles"
 script_author = "Majid Shamkhani"
-script_version = "1.5"
+script_version = "1.6"
 
 -- <<<<<<<<<<<<<<<<<<<<<<<<< Main Methods >>>>>>>>>>>>>>>>>>>>>>>>>
 
 -- ------------------------- AddBackground ---------------------
 
 bgPattern = [[{\p1\pos%(.-%)}m %d+ %d+ l %d+ %d+ l %d+ %d+ l %d+ %d+ l %d+ %d+]]
-bgTransformPattern = [[({\p1\pos%(.-%)}m %d+ %d+ l %d+ %d+ l %d+ )(%d+)( l %d+ )(%d+)( l %d+ %d+)]]
 
 function AddBackground(subs)
 
@@ -48,6 +46,9 @@ function AddBackground(subs)
 	-- Adding new shape line and exit
 	if doExit then return end
 
+	local secondForContinuousBackground = GetNumberFromUser("\r\n Enter maximum second to make background continious: \r\n", 3)
+	if secondForContinuousBackground == 0 then return end
+
 	while i < n do
 		i = i + 1
 		
@@ -65,19 +66,16 @@ function AddBackground(subs)
 				goto continue
 			end
 
-			local startTimeEqualsPeriorEndTime = isStartTimeEqualsPeriorEndTime(l, periorEndTime)
+			local startTimeEqualsPeriorEndTime = isStartTimeEqualsPeriorEndTime(l, periorEndTime, secondForContinuousBackground)
 
-			local currentLineCount = calcLineCount(l, styles);
-
-			if not startTimeEqualsPeriorEndTime or lastLineCount ~= currentLineCount then
+			if not startTimeEqualsPeriorEndTime then
 				l.i = i
 				l.comment = false
-				local bgLine = generateBackground(subs, styles, l, bgShape)
-
+				local bgLine = generateBackground(l, bgShape)
 				if groupBackgroundIndex ~= -1 and groupCount > 0 then
 					setLastGroupBackgroundEndTime(subs, groupBackgroundIndex, periorEndTime);
 					groupCount = 0;
-				end				
+				end
 				subs.insert(i, bgLine)
 				groupBackgroundIndex = i;
 				i = i + 1
@@ -98,82 +96,6 @@ function AddBackground(subs)
 	end
 
 	aegisub.set_undo_point(add_background_script_name)
-end
-
-------------------------- AddSelectedBackground ---------------------------
-
-function AddSelectedBackground(subs, selected)
-
-	if not videoLoaded() then return end
-
-	if #selected > 1 then return end
-
-	local meta, styles = karaskel.collect_head(subs)
-	local line = subs[selected[1]]
-
-	local meta, styles = karaskel.collect_head(subs)
-	-- start processing lines
-	local i, n = 0
-	n = subs.n
-	local periorEndTime = ""
-	local groupBackgroundIndex = -1
-	local groupCount = 0
-	local lastLineCount = 0
-
-	local bgShape, doExit = getBackgroundLine(subs, styles)
-	
-	-- Missing background shape
-	-- Adding new shape line and exit
-	if doExit then return end
-
-	i = selected[1] - 1
-	
-	while i < n do
-		i = i + 1
-		--aegisub.progress.set(i/n*100)
-		
-		local l = subs[i]
-		if l.class == "dialogue" and l.effect == "" and not l.comment then
-
-			local startTimeEqualsPeriorEndTime = isStartTimeEqualsPeriorEndTime(l, periorEndTime)
-
-			local currentLineCount = calcLineCount(l, styles);
-
-			if not startTimeEqualsPeriorEndTime or lastLineCount ~= currentLineCount then
-
-				-- End of group background position, must be exiting
-				if groupBackgroundIndex ~= -1 then
-					goto continue
-				end
-
-				l.i = i
-				l.comment = false
-				local bgLine = generateBackground(subs, styles, l, bgShape)
-
-				if groupBackgroundIndex ~= -1 and groupCount > 0 then
-					setLastGroupBackgroundEndTime(subs, groupBackgroundIndex, periorEndTime);
-					groupCount = 0;
-				end				
-				subs.insert(i, bgLine)
-				groupBackgroundIndex = i;
-				i = i + 1
-				n = n + 1
-			else
-				groupCount  = groupCount + 1;
-			end
-
-			periorEndTime = l.end_time
-			lastLineCount = calcLineCount(l, styles)
-		end
-	end
-
-	::continue::
-
-	if groupCount > 0 then
-		setLastGroupBackgroundEndTime(subs, groupBackgroundIndex, periorEndTime);
-	end
-
-	aegisub.set_undo_point(add_selected_background_script_name)
 end
 
 ------------------------------ Split Line -----------------------------
@@ -232,7 +154,7 @@ function SplitAtIndex(subs,selected)
 
 	line2 = table.copy(line)
 
-	local idx = GetIndexFromUser()
+	local idx = GetNumberFromUser("\r\n Enter index of character that you want to split line on that character: \r\n", 2)
 	
 	if idx == 0 then return end
 
@@ -259,8 +181,8 @@ end
 
 local SpecialChars = [[%.,،%?؟«»!%-:]]
 local PunctuationMarks = [[%.,،%?؟:؛!;]]
-local StartingBracketChars = [[%({%[<«]]
-local EndingsBracketChars = [[%)}%]>»]]
+local StartingBracketChars = [[%({%[<«“]]
+local EndingsBracketChars = [[%)}%]>»”]]
 local CodePattern = "({.-})"
 
 function RtlCorrection(subs)
@@ -446,22 +368,10 @@ end
 
 ---------------------- AddBackground Methods ------------------
 
-function generateBackground(subs, styles, line, bgShape)
+function generateBackground(line, bgShape)
 	local bgLine = table.copy(line)
-	local lineCount = calcLineCount(line, styles)
-	local lineHeight = getTextHeight(styles, line)
-
-	local topAndBottomMargin = getTopAndBottomMargin(bgShape, lineHeight)
-	local bgHeight = lineCount * lineHeight + topAndBottomMargin
-	local repl = string.format("%%1%d%%3%d%%5", bgHeight, bgHeight)
-	bgLine.text = bgShape.text:gsub(bgTransformPattern, repl)
-	local r, i = string.gsub(bgShape.text, bgTransformPattern, repl)
-	if i > 0 then
-		bgLine.text = r
-		bgLine.style = bgShape.style
-		return bgLine
-	end
-	bgLine.text = "Error"
+	bgLine.text = bgShape.text
+	bgLine.style = bgShape.style
 	return bgLine
 end
 
@@ -521,11 +431,9 @@ function getBackgroundLine(subs, styles)
 		ShowMessage(
 tr[[The background shape is missing and now added as first line of subtitle.
 Please use flowing steps:
-   1- Uncomment background line.
-   2- Align background shape with single line of subtitle.
-   3- Use appropriate style for background.
-   4- Recomment background line.
-   5- Run command again.]])
+   1- Align background shape with one subtitle.
+   2- Use appropriate style for background.
+   3- Run command again.]])
 		return nil, true
 	end
 	
@@ -540,11 +448,6 @@ function getFirstSubtitleLine(subs)
 		end
 	end
 	return nil, -1
-end
-
-function getTopAndBottomMargin(bgShape, lineHeight)
-	local bgShapeHeight = string.gsub(bgShape.text, bgTransformPattern, "%2")
-	return bgShapeHeight - lineHeight;
 end
 
 function string:split( inSplitPattern, outResults )
@@ -563,11 +466,10 @@ function string:split( inSplitPattern, outResults )
 	return outResults
 end
 
-function isStartTimeEqualsPeriorEndTime(line, periorEndTime)
+function isStartTimeEqualsPeriorEndTime(line, periorEndTime, secondForContinuousBackground)
 	if periorEndTime == "" then return false end
 	local diff = line.start_time - periorEndTime
-	-- < 2 Second
-	return diff < 2000
+	return diff < secondForContinuousBackground * 1000
 end
 
 function setLastGroupBackgroundEndTime(subs, groupBackgroundIndex, periorEndTime)
@@ -614,7 +516,6 @@ function createBackgroundLine(subs, line, idx)
 	local bgLine = table.copy(line)
 	local videoW, videoH = getVideoSize()
 	local margin = videoW / 64
-	bgLine.comment = true
 	bgLine.style = "TextBackground"
 	bgLine.text = string.format("{\\p1\\pos(%d,%d)}m 0 0 l %d 0 l %d %d l 0 %d l 0 0", videoW/2, videoH-margin, videoW-margin*2, videoW-margin*2, margin*4, margin*4)
 	subs.insert(idx, bgLine)
@@ -677,14 +578,14 @@ function ChangeLineTime(text, line1, line2)
 	return line1, line2
 end
 
-function GetIndexFromUser()
+function GetNumberFromUser(msg, defaultValue)
 	config = {
-		{class="label", label="\r\n Enter index of character that you want to split line on that character: \r\n", x=0, y=0},
-		{class="intedit", name="charIndex", value=2, x=0, y=1}
+		{class="label", label=msg, x=0, y=0},
+		{class="intedit", name="inputNumber", value=defaultValue, x=0, y=1}
 	}
 	btn, result = aegisub.dialog.display(config, {"OK", "Cancel"}, {ok="OK", cancel="Cancel"})
 	if btn then	
-		local r = tonumber(result.charIndex)
+		local r = tonumber(result.inputNumber)
 		return r
 	end
 	return 0
@@ -892,7 +793,6 @@ function OpenEditor(str)
 	return btn, result.editor
 end
 
-aegisub.register_macro(add_selected_background_script_name, tr"Adds background for selected line", AddSelectedBackground)
 aegisub.register_macro(add_background_script_name, tr"Adds background before every line", AddBackground)
 aegisub.register_macro(split_script_name, tr"Split selected lines", Split)
 aegisub.register_macro(split_at_index_script_name, tr"Split selected line at index", SplitAtIndex)
