@@ -19,7 +19,7 @@ import_text_to_selected_lines = tr"Masaf/Import text to selected Lines"
 
 script_description = tr"Some Aegisub automation scripts specially designed for Right-To-Left language subtitles"
 script_author = "Majid Shamkhani"
-script_version = "1.6"
+script_version = "1.7"
 
 -- <<<<<<<<<<<<<<<<<<<<<<<<< Main Methods >>>>>>>>>>>>>>>>>>>>>>>>>
 
@@ -517,7 +517,7 @@ function createBackgroundLine(subs, line, idx)
 	local videoW, videoH = getVideoSize()
 	local margin = videoW / 64
 	bgLine.style = "TextBackground"
-	bgLine.text = string.format("{\\p1\\pos(%d,%d)}m 0 0 l %d 0 l %d %d l 0 %d l 0 0", videoW/2, videoH-margin, videoW-margin*2, videoW-margin*2, margin*4, margin*4)
+	bgLine.text = string.format("{\\p1\\pos(%d,%d)}m 0 0 l %d 0 l %d %d l 0 %d l 0 0", videoW/2, videoH-margin, videoW-margin*2, videoW-margin*2, margin*8, margin*8)
 	subs.insert(idx, bgLine)
 end
 
