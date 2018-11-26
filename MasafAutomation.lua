@@ -19,7 +19,7 @@ import_text_to_selected_lines = tr"Masaf/Import text to selected Lines"
 
 script_description = tr"Some Aegisub automation scripts specially designed for Right-To-Left language subtitles"
 script_author = "Majid Shamkhani"
-script_version = "1.7"
+script_version = "1.7.1"
 
 -- <<<<<<<<<<<<<<<<<<<<<<<<< Main Methods >>>>>>>>>>>>>>>>>>>>>>>>>
 
@@ -100,7 +100,7 @@ end
 
 ------------------------------ Split Line -----------------------------
 
-local SplitChars = {"||", "\\N", "%.", ",", "،", ";", "%?", "؟", "!", ":"}
+local SplitChars = {"||", "\\N", "%.", ",", "،", ";", "%?", "؟", "!", ":", "؛"}
 
 function Split(subs,sel)
 	for i = #sel, 1, -1 do
@@ -669,7 +669,7 @@ function RemoveDoubleSpace(s)
 end
 
 function RemoveSpacesBeforePunctuationMarks(s)
-	local pattern = "(%s\"+)([{"..PunctuationMarks.."}])"
+	local pattern = "(%s+)([{"..PunctuationMarks.."}])"
 	local replaced = s
 	while utf8.match(replaced, pattern) do
 		replaced = utf8.gsub(replaced, pattern, "%2")
