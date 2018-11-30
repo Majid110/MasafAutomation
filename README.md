@@ -15,6 +15,7 @@ Some Aegisub automation scripts specially designed for Right-To-Left language su
 * Add Code to Selected lines
 * Remove line Breaks
 * Import text to selected Lines
+* Select playing line
 
 ## Screenshots:
 
