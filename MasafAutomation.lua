@@ -20,7 +20,7 @@ select_playing_line = tr"Masaf/Select playing line"
 
 script_description = tr"Some Aegisub automation scripts specially designed for Right-To-Left language subtitles"
 script_author = "Majid Shamkhani"
-script_version = "1.8.0"
+script_version = "1.8.1"
 
 -- <<<<<<<<<<<<<<<<<<<<<<<<< Main Methods >>>>>>>>>>>>>>>>>>>>>>>>>
 
@@ -116,6 +116,8 @@ function Split(subs,sel)
 			line.text = string.sub(text, 1, s - 1) 
 			line2.text = string.sub(text, e + 1, string.len(text))
 			ChangeLineTime(text, line, line2)
+			line.text = applyRtlCorrection(line.text)
+			line2.text = applyRtlCorrection(line2.text)
 			subs[sel[i]] = line
 			subs.insert(sel[i] + 1, line2)			
 			goto continue
@@ -133,6 +135,8 @@ function Split(subs,sel)
 				line2.text = string.sub(text, e + 1, string.len(text))
 			end
 			ChangeLineTime(text, line, line2)
+			line.text = applyRtlCorrection(line.text)
+			line2.text = applyRtlCorrection(line2.text)			
 			subs[sel[i]] = line
 			subs.insert(sel[i] + 1, line2)			
 		end
@@ -170,6 +174,8 @@ function SplitAtIndex(subs,selected)
 			line2.text = utf8.sub(text, e + 1, utf8.len(text))
 		end
 		ChangeLineTime(text, line, line2)
+		line.text = applyRtlCorrection(line.text)
+		line2.text = applyRtlCorrection(line2.text)		
 		subs[selected[1]] = line
 		subs.insert(selected[1] + 1, line2)			
 	end
@@ -201,20 +207,7 @@ function RtlCorrection(subs)
 				local text = ""
 				for k = 1, #parts do
 					local t = parts[k]
-					if utf8.match(t, CodePattern) == nil then
-						--t = Trim(t)
-						t = RemoveRle(t)
-						t = RemoveDoubleSpace(t)
-						t = RemoveSpacesBeforePunctuationMarks(t)
-						t = AddRequiredSpaceAfterPunctuationMarks(t)
-						t = AddRequiredSpaceBeforeStartingBrackets(t)
-						t = RemoveSpaceAfterStartingBrackets(t)
-						t = RemoveSpaceBeforeEndingBrackets(t)
-						t = AddRequiredSpaceAfterEndingBrackets(t)
-						if IsRtl(t) then
-							t = AddRleToEachNoneAlphabeticChars(t)
-						end
-					end
+					t = applyRtlCorrection(t)
 					text = text..t
 				end
 				l.text = text
@@ -241,19 +234,7 @@ function RtlCorrectorSelectedLine(subs, selected)
 		local text = ""
 		for k = 1, #parts do
 			local t = parts[k]
-			if utf8.match(t, CodePattern) == nil then
-				--t = Trim(t)
-				t = RemoveRle(t)
-				t = RemoveDoubleSpace(t)
-				t = RemoveSpacesBeforePunctuationMarks(t)
-				t = AddRequiredSpaceBeforeStartingBrackets(t)
-				t = RemoveSpaceAfterStartingBrackets(t)
-				t = RemoveSpaceBeforeEndingBrackets(t)
-				t = AddRequiredSpaceAfterEndingBrackets(t)
-				if IsRtl(t) then
-					t = AddRleToEachNoneAlphabeticChars(t)
-				end
-			end
+			t = applyRtlCorrection(t)
 			text = text..t
 		end
 		line.text = text
@@ -656,7 +637,7 @@ function GetTextFromUser()
 	return nil
 end
 
------------------------ RtlCorrection Methods ---------------------
+----------------------- Rtl Correction Methods ---------------------
 
 function RemoveRle(s)
 	local rleChar = utf8.char(0x202B)
@@ -797,6 +778,22 @@ function GetTextParts(s)
   return parts
 end
 
+function applyRtlCorrection(s)
+	if  utf8.match(s, CodePattern) == nil then
+		s = RemoveRle(s)
+		s = RemoveDoubleSpace(s)
+		s = RemoveSpacesBeforePunctuationMarks(s)
+		s = AddRequiredSpaceAfterPunctuationMarks(s)
+		s = AddRequiredSpaceBeforeStartingBrackets(s)
+		s = RemoveSpaceAfterStartingBrackets(s)
+		s = RemoveSpaceBeforeEndingBrackets(s)
+		s = AddRequiredSpaceAfterEndingBrackets(s)
+		if IsRtl(s) then
+			s = AddRleToEachNoneAlphabeticChars(s)
+		end	
+	end
+	return s
+end
 ------------------------------- Rtl Editor Methods ----------------------
 
 function OpenEditor(str)
