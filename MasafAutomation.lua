@@ -16,10 +16,11 @@ unify_background_lines_script_name = tr"Masaf/Unify Background lines"
 add_code_to_selected_lines_script_name = tr"Masaf/Add Code to Selected lines"
 remove_line_break_script_name = tr"Masaf/Remove line Breaks"
 import_text_to_selected_lines = tr"Masaf/Import text to selected Lines"
+select_playing_line = tr"Masaf/Select playing line"
 
 script_description = tr"Some Aegisub automation scripts specially designed for Right-To-Left language subtitles"
 script_author = "Majid Shamkhani"
-script_version = "1.7.1"
+script_version = "1.8.0"
 
 -- <<<<<<<<<<<<<<<<<<<<<<<<< Main Methods >>>>>>>>>>>>>>>>>>>>>>>>>
 
@@ -360,6 +361,20 @@ function ImportTextToSelectedLines(subs, selected)
 	end
 
 	aegisub.set_undo_point(import_text_to_selected_lines)
+end	
+
+---------------------- Select playing line -------------------------
+function SelectPlayingLine(subs, selected)
+	
+	local vframe = aegisub.project_properties().video_position
+	fr2ms=aegisub.ms_from_frame
+	for i = 1, #subs do
+		local line = subs[i]
+		if line.class == "dialogue" and line.start_time >= fr2ms(vframe) then
+			selected = {i-1}
+			return selected
+		end
+	end		
 end	
 
 ------------------------- End of Main Methods -------------------
@@ -804,3 +819,4 @@ aegisub.register_macro(unify_background_lines_script_name, tr"Unify Background L
 aegisub.register_macro(add_code_to_selected_lines_script_name, tr"Add Code To Selected Lines", AddCodeToSelectedLines)
 aegisub.register_macro(remove_line_break_script_name, tr"Remove line Breaks", RemoveLineBreaks)
 aegisub.register_macro(import_text_to_selected_lines, tr"Import text to selected lines", ImportTextToSelectedLines)
+aegisub.register_macro(select_playing_line, tr"Select playing line", SelectPlayingLine)
