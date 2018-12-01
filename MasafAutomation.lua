@@ -20,7 +20,7 @@ select_playing_line = tr"Masaf/Select playing line"
 
 script_description = tr"Some Aegisub automation scripts specially designed for Right-To-Left language subtitles"
 script_author = "Majid Shamkhani"
-script_version = "1.8.1"
+script_version = "1.8.2"
 
 -- <<<<<<<<<<<<<<<<<<<<<<<<< Main Methods >>>>>>>>>>>>>>>>>>>>>>>>>
 
@@ -349,13 +349,25 @@ function SelectPlayingLine(subs, selected)
 	
 	local vframe = aegisub.project_properties().video_position
 	fr2ms=aegisub.ms_from_frame
-	for i = 1, #subs do
+
+	local j = #selected
+	if j < 1 or j == #subs then j = 1 end
+	for i = j, #subs do
 		local line = subs[i]
 		if line.class == "dialogue" and line.start_time >= fr2ms(vframe) then
 			selected = {i-1}
 			return selected
 		end
-	end		
+	end
+	if j > 1 then
+		for i = 1, j do
+			local line = subs[i]
+			if line.class == "dialogue" and line.start_time >= fr2ms(vframe) then
+				selected = {i-1}
+				return selected
+			end
+		end
+	end
 end	
 
 ------------------------- End of Main Methods -------------------
