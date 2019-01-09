@@ -16,6 +16,7 @@ Some Aegisub automation scripts specially designed for Right-To-Left language su
 * Remove line Breaks
 * Import text to selected Lines
 * Select playing line
+* Make next line continuous
 
 ## Screenshots:
 
