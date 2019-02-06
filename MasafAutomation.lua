@@ -39,6 +39,9 @@ bgPattern = [[{\p1\pos%(.-%)}m %d+ %d+ l %d+ %d+ l %d+ %d+ l %d+ %d+ l %d+ %d+]]
 posPattern = "^{\\pos%(.-%)}"
 bgPosPattern = "^{\\p1\\pos%(.-%)}"
 
+rleChar = utf8.char(0x202B)
+pdfChar = utf8.char(0x202C)
+
 function AddBackground(subs)
 	if not videoLoaded() then
 		return
@@ -282,7 +285,7 @@ function UndoRtlCorrection(subs, selected)
 		return
 	end
 	local line = subs[selected[1]]
-	line.text = removeRle(line.text)
+	line.text = removeRtlChars(line.text)
 	subs[selected[1]] = line
 
 	aegisub.set_undo_point(undo_rtl_correction_script_name)
@@ -918,10 +921,9 @@ end
 
 ----------------------- Rtl Correction Methods ---------------------
 
-function removeRle(s)
-	local rleChar = utf8.char(0x202B)
-
+function removeRtlChars(s)
 	local replaced = utf8.gsub(s, rleChar, "")
+	local replaced = utf8.gsub(replaced, pdfChar, "")
 	return replaced
 end
 
@@ -929,9 +931,7 @@ function addRleToEachNoneAlphabeticChars(s)
 	local pattern = "([{" .. SpecialChars .. "}])"
 
 	-- Start of right to left embeding character
-	local rleChar = utf8.char(0x202B)
-
-	local replaced = utf8.gsub(s, pattern, rleChar .. "%1")
+	local replaced = utf8.gsub(s, pattern, pdfChar .. rleChar .. "%1" .. pdfChar .. rleChar)
 	replaced = utf8.gsub(replaced, "\\N", "\\N" .. rleChar)
 	return rleChar .. replaced
 end
@@ -1078,7 +1078,7 @@ end
 
 function applyRtlCorrection(s)
 	if utf8.match(s, CodePattern) == nil then
-		s = removeRle(s)
+		s = removeRtlChars(s)
 		s = removeDoubleSpace(s)
 		s = removeSpacesBeforePunctuationMarks(s)
 		s = addRequiredSpaceAfterPunctuationMarks(s)
