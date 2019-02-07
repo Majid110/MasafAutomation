@@ -689,8 +689,8 @@ function getBackgroundLine(subs, styles)
 		createBackgroundLine(subs, firstLine, i)
 		showMessage(
 			tr [[The background shape is missing and now added as first line of subtitle.
-Please use flowing steps:
-   1- Align background shape with one subtitle.
+Please do flowing steps:
+   1- Change background size and position if needed.
    2- Use appropriate style for background.
    3- Run command again.]]
 		)
