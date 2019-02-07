@@ -26,6 +26,7 @@ move_first_part_of_next = tr "Masaf/Move first part of next"
 move_last_word = tr "Masaf/Move last word"
 move_first_word_of_next = tr "Masaf/Move first word of next"
 remove_position_tags = tr "Masaf/Remove Position tags"
+display_sum_of_times = tr "Masaf/Display sum of times"
 
 script_description = tr "Some Aegisub automation scripts specially designed for Right-To-Left language subtitles"
 script_author = "Majid Shamkhani"
@@ -620,6 +621,22 @@ function RemovePositionTags(subs)
 		end
 	end
 	aegisub.set_undo_point(remove_position_tags)
+end
+
+---------------------- Display sum of times -------------------------
+function DisplaySumOfTimes(subs)
+	local sum = 0
+	for i = 1, #subs do
+		local l = subs[i]
+		if l.class == "dialogue" and l.effect == "" and (not l.comment) and (not isBackgroundLine(l)) then
+			sum = sum + (l.end_time - l.start_time)
+		end
+	end
+
+	local minutes = math.ceil(sum/1000/60);
+	local msg = "Total minutes  = " .. tostring(minutes)
+	msg = msg .. "\nTotal time = " .. secondsToClock(sum/1000)
+	showMessage(msg)
 end
 ------------------------- End of Main Methods -------------------
 
@@ -1221,6 +1238,19 @@ function removeDoubleSpace(s)
 	return s
 end
 
+function secondsToClock(seconds)
+  local seconds = tonumber(seconds)
+
+  if seconds <= 0 then
+    return "00:00:00";
+  else
+    hours = string.format("%02.f", math.floor(seconds/3600));
+    mins = string.format("%02.f", math.floor(seconds/60 - (hours*60)));
+    secs = string.format("%02.f", math.floor(seconds - hours*3600 - mins *60));
+    return hours..":"..mins..":"..secs
+  end
+end
+
 ------------------------------ End of methods ------------------------------
 
 aegisub.register_macro(add_background_script_name, tr "Adds background before every line", AddBackground)
@@ -1249,3 +1279,4 @@ aegisub.register_macro(move_first_part_of_next, tr "Move first part of next", Mo
 aegisub.register_macro(move_last_word, tr "Move last word", MoveLastWord)
 aegisub.register_macro(move_first_word_of_next, tr "Move first word of next", MoveFirstWordOfNext)
 aegisub.register_macro(remove_position_tags, tr "Remove Position tags", RemovePositionTags)
+aegisub.register_macro(display_sum_of_times, tr "Display sum of times", DisplaySumOfTimes)
