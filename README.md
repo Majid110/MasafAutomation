@@ -28,6 +28,7 @@ Some Aegisub automation scripts specially designed for Right-To-Left language su
 - Move last word
 - Move first word of next
 - Remove Position tags
+- Generate SRT like text
 
 ## Screenshots:
 

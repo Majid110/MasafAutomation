@@ -27,10 +27,11 @@ move_last_word = tr "Masaf/Move last word"
 move_first_word_of_next = tr "Masaf/Move first word of next"
 remove_position_tags = tr "Masaf/Remove Position tags"
 display_sum_of_times = tr "Masaf/Display sum of times"
+generate_srt_like_text = tr "Masaf/Generate SRT like text"
 
 script_description = tr "Some Aegisub automation scripts specially designed for Right-To-Left language subtitles"
 script_author = "Majid Shamkhani"
-script_version = "1.10.0"
+script_version = "1.11.0"
 
 -- <<<<<<<<<<<<<<<<<<<<<<<<< Main Methods >>>>>>>>>>>>>>>>>>>>>>>>>
 
@@ -633,10 +634,31 @@ function DisplaySumOfTimes(subs)
 		end
 	end
 
-	local minutes = math.ceil(sum/1000/60);
+	local minutes = math.ceil(sum / 1000 / 60)
 	local msg = "Total minutes  = " .. tostring(minutes)
-	msg = msg .. "\nTotal time = " .. secondsToClock(sum/1000)
+	msg = msg .. "\nTotal time = " .. secondsToClock(sum / 1000)
 	showMessage(msg)
+end
+
+---------------------- Generate SRT Like Text -------------------------
+function GenerateSrtLikeText(subs)
+	local sum = 0
+	local srtText = ""
+	local lineNumber = 0
+	for i = 1, #subs do
+		local l = subs[i]
+		if l.class == "dialogue" and l.effect == "" then
+			lineNumber = lineNumber + 1
+			if (not l.comment) and (not isBackgroundLine(l)) then
+				srtText = srtText .. lineNumber .. "\n"
+				srtText = srtText .. secondsToClock(l.start_time / 1000) .. "  -->  " .. secondsToClock(l.end_time / 1000) .. "\n"
+				srtText = srtText .. replaceLineBreak(cleanTags(l.text)) .. "\n"
+				srtText = srtText .. "\n"
+				srtText = srtText .. "\n"
+			end
+		end
+	end
+	openEditor(srtText)
 end
 ------------------------- End of Main Methods -------------------
 
@@ -1239,17 +1261,22 @@ function removeDoubleSpace(s)
 end
 
 function secondsToClock(seconds)
-  local seconds = tonumber(seconds)
+	local seconds = tonumber(seconds)
 
-  if seconds <= 0 then
-    return "00:00:00";
-  else
-    hours = string.format("%02.f", math.floor(seconds/3600));
-    mins = string.format("%02.f", math.floor(seconds/60 - (hours*60)));
-    secs = string.format("%02.f", math.floor(seconds - hours*3600 - mins *60));
-    return hours..":"..mins..":"..secs
-  end
+	if seconds <= 0 then
+		return "00:00:00"
+	else
+		hours = string.format("%02.f", math.floor(seconds / 3600))
+		mins = string.format("%02.f", math.floor(seconds / 60 - (hours * 60)))
+		secs = string.format("%02.f", math.floor(seconds - hours * 3600 - mins * 60))
+		return hours .. ":" .. mins .. ":" .. secs
+	end
 end
+
+function replaceLineBreak(s)
+	return utf8.gsub(s, "\\N", "\n")
+end
+
 
 ------------------------------ End of methods ------------------------------
 
@@ -1280,3 +1307,4 @@ aegisub.register_macro(move_last_word, tr "Move last word", MoveLastWord)
 aegisub.register_macro(move_first_word_of_next, tr "Move first word of next", MoveFirstWordOfNext)
 aegisub.register_macro(remove_position_tags, tr "Remove Position tags", RemovePositionTags)
 aegisub.register_macro(display_sum_of_times, tr "Display sum of times", DisplaySumOfTimes)
+aegisub.register_macro(generate_srt_like_text, tr "Generate SRT like text", GenerateSrtLikeText)
