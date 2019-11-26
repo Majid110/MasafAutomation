@@ -66,6 +66,10 @@ function AddBackground(subs)
 		return
 	end
 
+	-- Comment background line	
+	bgShape.comment = true
+	subs[bgShape.i] = bgShape
+
 	local positionTag = getPositionTag(bgShape.text)
 
 	local secondForContinuousBackground =
@@ -654,7 +658,6 @@ function GenerateSrtLikeText(subs)
 				srtText = srtText .. secondsToClock(l.start_time / 1000) .. "  -->  " .. secondsToClock(l.end_time / 1000) .. "\n"
 				srtText = srtText .. replaceLineBreak(cleanTags(l.text)) .. "\n"
 				srtText = srtText .. "\n"
-				srtText = srtText .. "\n"
 			end
 		end
 	end
@@ -767,10 +770,14 @@ function setLastGroupBackgroundEndTime(subs, groupBackgroundIndex, periorEndTime
 end
 
 function createBackgroundStyle(subs, styles)
-	if styles["TextBackground"] then
+	local style = styles["TextBackground"]
+	if style then
+		-- Set existing background style align to 5
+		style.align = 5
+		updateStyle(subs, style.name, style)
 		return
 	end
-	local style = {
+	style = {
 		class = "style",
 		section = "V4+ Styles",
 		name = "TextBackground",
@@ -812,8 +819,8 @@ function createBackgroundLine(subs, line, idx)
 		"{\\p1\\pos(%d,%d)}m 0 0 l %d 0 l %d %d l 0 %d l 0 0",
 		videoW / 2,
 		videoH - shapeHeight + margin,
-		videoW - margin * 2,
-		videoW - margin * 2,
+		videoW - 1,
+		videoW - 1,
 		shapeHeight,
 		shapeHeight
 	)
