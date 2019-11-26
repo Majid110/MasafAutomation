@@ -734,7 +734,11 @@ function getBackgroundLine(subs, styles)
 Please do flowing steps:
    1- Change background size and position if needed.
    2- Use appropriate style for background.
-   3- Run command again.]]
+   3- Run command again.
+
+Note:
+   The script will add background to all lines except lines containing {\nobg} command
+   or lines with style name ended with _NoBg word (e.g OnScreenText_NoBg)]]
 		)
 		return nil, true
 	end
