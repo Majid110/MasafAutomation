@@ -31,7 +31,7 @@ generate_srt_like_text = tr "Masaf/Generate SRT like text"
 
 script_description = tr "Some Aegisub automation scripts specially designed for Right-To-Left language subtitles"
 script_author = "Majid Shamkhani"
-script_version = "1.11.0"
+script_version = "1.12.0"
 
 -- <<<<<<<<<<<<<<<<<<<<<<<<< Main Methods >>>>>>>>>>>>>>>>>>>>>>>>>
 
@@ -867,6 +867,8 @@ end
 function changeStyleAlignToFive(subs, styles, line)
 	local style = styles[line.style]
 	style.align = 5
+	style.outline = 0
+	style.shadow = 0
 	updateStyle(subs, style.name, style)
 	return style
 end
