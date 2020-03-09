@@ -816,7 +816,7 @@ function createBackgroundLine(subs, line, idx)
 	local bgLine = table.copy(line)
 	local videoW, videoH = getVideoSize()
 	local margin = videoW / 64
-	local shapeHeight = margin * 8
+	local shapeHeight = margin * 7
 	bgLine.style = "TextBackground"
 	bgLine.text =
 		string.format(
