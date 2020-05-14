@@ -31,7 +31,7 @@ generate_srt_like_text = tr "Masaf/Generate SRT like text"
 
 script_description = tr "Some Aegisub automation scripts specially designed for Right-To-Left language subtitles"
 script_author = "Majid Shamkhani"
-script_version = "1.12.0"
+script_version = "1.13.0"
 
 -- <<<<<<<<<<<<<<<<<<<<<<<<< Main Methods >>>>>>>>>>>>>>>>>>>>>>>>>
 
@@ -99,8 +99,10 @@ function AddBackground(subs)
 			if textStyle == nil then
 				textStyle = changeStyleAlignToFive(subs, styles, l)
 			end
-
-			l.text = addPositionTag(l.text, positionTag)
+			
+			if not string.find(l.text, "\\fixedpos") then
+				l.text = addPositionTag(l.text, positionTag)
+			end
 			subs[i] = l
 
 			local startTimeEqualsPeriorEndTime = isStartTimeEqualsPeriorEndTime(l, periorEndTime, secondForContinuousBackground)
