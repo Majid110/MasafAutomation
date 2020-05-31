@@ -31,7 +31,7 @@ generate_srt_like_text = tr "Masaf/Generate SRT like text"
 
 script_description = tr "Some Aegisub automation scripts specially designed for Right-To-Left language subtitles"
 script_author = "Majid Shamkhani"
-script_version = "1.13.0"
+script_version = "1.13.1"
 
 -- <<<<<<<<<<<<<<<<<<<<<<<<< Main Methods >>>>>>>>>>>>>>>>>>>>>>>>>
 
@@ -370,8 +370,9 @@ function RemoveLineBreaks(subs, selected)
 	end
 	local line = subs[selected[1]]
 	line.text = utf8.gsub(line.text, "\\N", " ")
+	line.text = removeDoubleSpace(line.text)
 	subs[selected[1]] = line
-
+	
 	aegisub.set_undo_point(remove_line_break_script_name)
 end
 
