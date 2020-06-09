@@ -31,7 +31,7 @@ generate_srt_like_text = tr "Masaf/Generate SRT like text"
 
 script_description = tr "Some Aegisub automation scripts specially designed for Right-To-Left language subtitles"
 script_author = "Majid Shamkhani"
-script_version = "1.13.1"
+script_version = "1.14.0"
 
 -- <<<<<<<<<<<<<<<<<<<<<<<<< Main Methods >>>>>>>>>>>>>>>>>>>>>>>>>
 
@@ -242,7 +242,7 @@ function RtlCorrection(subs)
 	while i < n do
 		i = i + 1
 		local l = subs[i]
-		if l.class == "dialogue" and l.effect == "" and not l.comment then
+		if l.class == "dialogue" and l.effect == "" and not l.comment and canCorrectRtl(l) then
 			if not isBackgroundLine(l) then
 				local parts = getSubtitleTextParts(l.text)
 				local text = ""
@@ -271,7 +271,7 @@ function RtlCorrectorSelectedLine(subs, selected)
 
 	-- start processing lines
 
-	if not isBackgroundLine(line) then
+	if (not isBackgroundLine(line)) and canCorrectRtl(line) then
 		local parts = getSubtitleTextParts(line.text)
 		local text = ""
 		for k = 1, #parts do
@@ -1146,6 +1146,12 @@ function applyRtlCorrection(s)
 		end
 	end
 	return s
+end
+
+function canCorrectRtl(line)
+	-- dcrtl = dont correct rtl
+	local canCorrect = not string.find(line.text, "\\dcrtl")
+	return canCorrect
 end
 ------------------------------- Rtl Editor Methods ----------------------
 
