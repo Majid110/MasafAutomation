@@ -28,10 +28,11 @@ move_first_word_of_next = tr "Masaf/Move first word of next"
 remove_position_tags = tr "Masaf/Remove Position tags"
 display_sum_of_times = tr "Masaf/Display sum of times"
 generate_srt_like_text = tr "Masaf/Generate SRT like text"
+remove_background_lines = tr "Masaf/Remove all Background lines"
 
 script_description = tr "Some Aegisub automation scripts specially designed for Right-To-Left language subtitles"
 script_author = "Majid Shamkhani"
-script_version = "1.14.0"
+script_version = "1.15.0"
 
 -- <<<<<<<<<<<<<<<<<<<<<<<<< Main Methods >>>>>>>>>>>>>>>>>>>>>>>>>
 
@@ -56,7 +57,6 @@ function AddBackground(subs)
 	local periorEndTime = ""
 	local groupBackgroundIndex = -1
 	local groupCount = 0
-	local lastLineCount = 0
 
 	local bgShape, doExit = getBackgroundLine(subs, styles)
 
@@ -66,7 +66,7 @@ function AddBackground(subs)
 		return
 	end
 
-	-- Comment background line	
+	-- Comment background line
 	bgShape.comment = true
 	subs[bgShape.i] = bgShape
 
@@ -99,7 +99,7 @@ function AddBackground(subs)
 			if textStyle == nil then
 				textStyle = changeStyleAlignToFive(subs, styles, l)
 			end
-			
+
 			if not string.find(l.text, "\\fixedpos") then
 				l.text = addPositionTag(l.text, positionTag)
 			end
@@ -124,7 +124,6 @@ function AddBackground(subs)
 			end
 
 			periorEndTime = l.end_time
-			lastLineCount = calcLineCount(l, styles)
 
 			::continue::
 		end
@@ -372,7 +371,7 @@ function RemoveLineBreaks(subs, selected)
 	line.text = utf8.gsub(line.text, "\\N", " ")
 	line.text = removeDoubleSpace(line.text)
 	subs[selected[1]] = line
-	
+
 	aegisub.set_undo_point(remove_line_break_script_name)
 end
 
@@ -666,6 +665,23 @@ function GenerateSrtLikeText(subs)
 	end
 	openEditor(srtText)
 end
+
+---------------------- Remove Background Lines -------------------------
+function RemoveBackgroundLines(subs)
+	local i, n = 0, #subs
+	n = subs.n
+	while i < n do
+		i = i + 1
+		local l = subs[i]
+		if l.class == "dialogue" and l.effect == "" and not l.comment and isBackgroundLine(l) then
+			subs.delete(i)
+			i = i - 1
+			n = n - 1
+		end
+	end
+	aegisub.set_undo_point(remove_background_lines)
+end
+
 ------------------------- End of Main Methods -------------------
 
 -- <<<<<<<<<<<<<<<<<<<<< Related Methods >>>>>>>>>>>>>>>>>>>>>>>>
@@ -1299,7 +1315,6 @@ function replaceLineBreak(s)
 	return utf8.gsub(s, "\\N", "\n")
 end
 
-
 ------------------------------ End of methods ------------------------------
 
 aegisub.register_macro(add_background_script_name, tr "Adds background before every line", AddBackground)
@@ -1330,3 +1345,4 @@ aegisub.register_macro(move_first_word_of_next, tr "Move first word of next", Mo
 aegisub.register_macro(remove_position_tags, tr "Remove Position tags", RemovePositionTags)
 aegisub.register_macro(display_sum_of_times, tr "Display sum of times", DisplaySumOfTimes)
 aegisub.register_macro(generate_srt_like_text, tr "Generate SRT like text", GenerateSrtLikeText)
+aegisub.register_macro(remove_background_lines, tr "Remove all Background lines", RemoveBackgroundLines)
