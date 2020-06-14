@@ -29,6 +29,7 @@ Some Aegisub automation scripts specially designed for Right-To-Left language su
 - Move first word of next
 - Remove Position tags
 - Generate SRT like text
+- Remove Background lines
 
 ## Screenshots:
 
