@@ -30,6 +30,9 @@ Some Aegisub automation scripts specially designed for Right-To-Left language su
 - Remove Position tags
 - Generate SRT like text
 - Remove Background lines
+- Convert Numbers to English
+- Convert Numbers to Arabic
+- Convert Numbers to Persian
 
 ## Screenshots:
 

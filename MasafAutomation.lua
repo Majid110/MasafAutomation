@@ -29,10 +29,13 @@ remove_position_tags = tr "Masaf/Remove Position tags"
 display_sum_of_times = tr "Masaf/Display sum of times"
 generate_srt_like_text = tr "Masaf/Generate SRT like text"
 remove_background_lines = tr "Masaf/Remove all Background lines"
+convert_numbers_to_english = tr "Masaf/Convert Numbers to English"
+convert_numbers_to_arabic = tr "Masaf/Convert Numbers to Arabic"
+convert_numbers_to_persian = tr "Masaf/Convert Numbers to Persian"
 
 script_description = tr "Some Aegisub automation scripts specially designed for Right-To-Left language subtitles"
 script_author = "Majid Shamkhani"
-script_version = "1.15.0"
+script_version = "1.16.0"
 
 -- <<<<<<<<<<<<<<<<<<<<<<<<< Main Methods >>>>>>>>>>>>>>>>>>>>>>>>>
 
@@ -682,6 +685,81 @@ function RemoveBackgroundLines(subs)
 	aegisub.set_undo_point(remove_background_lines)
 end
 
+---------------------- Number Converters -------------------------
+function ConvertNumbersToEnglish(subs)
+	local i, n = 0
+	n = subs.n
+
+	while i < n do
+		i = i + 1
+		local l = subs[i]
+		if l.class == "dialogue" and l.effect == "" and not l.comment and canCorrectRtl(l) then
+			if not isBackgroundLine(l) then
+				local parts = getSubtitleTextParts(l.text)
+				local text = ""
+				for k = 1, #parts do
+					local t = parts[k]
+					t = applyNumbersToEnglish(t)
+					text = text .. t
+				end
+				l.text = text
+				subs[i] = l
+			end
+		end
+	end
+
+	aegisub.set_undo_point(convert_numbers_to_english)
+end
+
+function ConvertNumbersToArabic(subs)
+	local i, n = 0
+	n = subs.n
+
+	while i < n do
+		i = i + 1
+		local l = subs[i]
+		if l.class == "dialogue" and l.effect == "" and not l.comment and canCorrectRtl(l) then
+			if not isBackgroundLine(l) then
+				local parts = getSubtitleTextParts(l.text)
+				local text = ""
+				for k = 1, #parts do
+					local t = parts[k]
+					t = applyNumbersToArabic(t)
+					text = text .. t
+				end
+				l.text = text
+				subs[i] = l
+			end
+		end
+	end
+
+	aegisub.set_undo_point(convert_numbers_to_arabic)
+end
+
+function ConvertNumbersToPersian(subs)
+	local i, n = 0
+	n = subs.n
+
+	while i < n do
+		i = i + 1
+		local l = subs[i]
+		if l.class == "dialogue" and l.effect == "" and not l.comment and canCorrectRtl(l) then
+			if not isBackgroundLine(l) then
+				local parts = getSubtitleTextParts(l.text)
+				local text = ""
+				for k = 1, #parts do
+					local t = parts[k]
+					t = applyNumbersToPersian(t)
+					text = text .. t
+				end
+				l.text = text
+				subs[i] = l
+			end
+		end
+	end
+
+	aegisub.set_undo_point(convert_numbers_to_arabic)
+end
 ------------------------- End of Main Methods -------------------
 
 -- <<<<<<<<<<<<<<<<<<<<< Related Methods >>>>>>>>>>>>>>>>>>>>>>>>
@@ -1251,6 +1329,94 @@ function getFirstWord(text)
 	return words[1]
 end
 
+------------------ Number Converter Methods -------------------
+function applyNumbersToEnglish(text)
+	-- Persian numbers to English
+	if utf8.match(text, CodePattern) == nil then
+		text = utf8.gsub(text, "۱", "1")
+		text = utf8.gsub(text, "۲", "2")
+		text = utf8.gsub(text, "۳", "3")
+		text = utf8.gsub(text, "۴", "4")
+		text = utf8.gsub(text, "۵", "5")
+		text = utf8.gsub(text, "۶", "6")
+		text = utf8.gsub(text, "۷", "7")
+		text = utf8.gsub(text, "۸", "8")
+		text = utf8.gsub(text, "۹", "9")
+		text = utf8.gsub(text, "۰", "0")
+
+		-- Arabic numbers to English
+		text = utf8.gsub(text, "١", "1")
+		text = utf8.gsub(text, "٢", "2")
+		text = utf8.gsub(text, "٣", "3")
+		text = utf8.gsub(text, "٤", "4")
+		text = utf8.gsub(text, "٥", "5")
+		text = utf8.gsub(text, "٦", "6")
+		text = utf8.gsub(text, "٧", "7")
+		text = utf8.gsub(text, "٨", "8")
+		text = utf8.gsub(text, "٩", "9")
+		text = utf8.gsub(text, "٠", "0")
+	end
+	return text
+end
+
+function applyNumbersToArabic(text)
+	if utf8.match(text, CodePattern) == nil then
+		-- Persian numbers to Arabic
+		text = utf8.gsub(text, "۱", "١")
+		text = utf8.gsub(text, "۲", "٢")
+		text = utf8.gsub(text, "۳", "٣")
+		text = utf8.gsub(text, "۴", "٤")
+		text = utf8.gsub(text, "۵", "٥")
+		text = utf8.gsub(text, "۶", "٦")
+		text = utf8.gsub(text, "۷", "٧")
+		text = utf8.gsub(text, "۸", "٨")
+		text = utf8.gsub(text, "۹", "٩")
+		text = utf8.gsub(text, "۰", "٠")
+
+		-- English numbers to Arabic
+		text = utf8.gsub(text, "1", "١")
+		text = utf8.gsub(text, "2", "٢")
+		text = utf8.gsub(text, "3", "٣")
+		text = utf8.gsub(text, "4", "٤")
+		text = utf8.gsub(text, "5", "٥")
+		text = utf8.gsub(text, "6", "٦")
+		text = utf8.gsub(text, "7", "٧")
+		text = utf8.gsub(text, "8", "٨")
+		text = utf8.gsub(text, "9", "٩")
+		text = utf8.gsub(text, "0", "٠")
+	end
+	return text
+end
+
+function applyNumbersToPersian(text)
+	if utf8.match(text, CodePattern) == nil then
+		-- Arabic numbers to Persian
+		text = utf8.gsub(text, "١", "۱")
+		text = utf8.gsub(text, "٢", "۲")
+		text = utf8.gsub(text, "٣", "۳")
+		text = utf8.gsub(text, "٤", "۴")
+		text = utf8.gsub(text, "٥", "۵")
+		text = utf8.gsub(text, "٦", "۶")
+		text = utf8.gsub(text, "٧", "۷")
+		text = utf8.gsub(text, "٨", "۸")
+		text = utf8.gsub(text, "٩", "۹")
+		text = utf8.gsub(text, "٠", "۰")
+
+		-- English numbers to Persian
+		text = utf8.gsub(text, "1", "۱")
+		text = utf8.gsub(text, "2", "۲")
+		text = utf8.gsub(text, "3", "۳")
+		text = utf8.gsub(text, "4", "۴")
+		text = utf8.gsub(text, "5", "۵")
+		text = utf8.gsub(text, "6", "۶")
+		text = utf8.gsub(text, "7", "۷")
+		text = utf8.gsub(text, "8", "۸")
+		text = utf8.gsub(text, "9", "۹")
+		text = utf8.gsub(text, "0", "۰")
+	end
+	return text
+end
+
 ------------------ Shared Methods -------------------
 function string:split(inSplitPattern, outResults)
 	if not outResults then
@@ -1346,3 +1512,6 @@ aegisub.register_macro(remove_position_tags, tr "Remove Position tags", RemovePo
 aegisub.register_macro(display_sum_of_times, tr "Display sum of times", DisplaySumOfTimes)
 aegisub.register_macro(generate_srt_like_text, tr "Generate SRT like text", GenerateSrtLikeText)
 aegisub.register_macro(remove_background_lines, tr "Remove all Background lines", RemoveBackgroundLines)
+aegisub.register_macro(convert_numbers_to_english, tr "Convert Numbers to English", ConvertNumbersToEnglish)
+aegisub.register_macro(convert_numbers_to_arabic, tr "Convert Numbers to Arabic", ConvertNumbersToArabic)
+aegisub.register_macro(convert_numbers_to_persian, tr "Convert Numbers to Persian", ConvertNumbersToPersian)
