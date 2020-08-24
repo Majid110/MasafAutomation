@@ -35,7 +35,7 @@ convert_numbers_to_persian = tr "Masaf/Convert Numbers to Persian"
 
 script_description = tr "Some Aegisub automation scripts specially designed for Right-To-Left language subtitles"
 script_author = "Majid Shamkhani"
-script_version = "1.16.0"
+script_version = "1.16.1"
 
 -- <<<<<<<<<<<<<<<<<<<<<<<<< Main Methods >>>>>>>>>>>>>>>>>>>>>>>>>
 
@@ -76,10 +76,7 @@ function AddBackground(subs)
 	local positionTag = getPositionTag(bgShape.text)
 
 	local secondForContinuousBackground =
-		getNumberFromUser("\r\n Enter maximum second to make background continious: \r\n", 3)
-	if secondForContinuousBackground == 0 then
-		return
-	end
+		getNumberFromUser("\r\n Enter maximum second to make background continious: \r\n", 1)
 
 	local textStyle = nil
 	while i < n do
