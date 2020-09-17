@@ -32,10 +32,12 @@ remove_background_lines = tr "Masaf/Remove all Background lines"
 convert_numbers_to_english = tr "Masaf/Convert Numbers to English"
 convert_numbers_to_arabic = tr "Masaf/Convert Numbers to Arabic"
 convert_numbers_to_persian = tr "Masaf/Convert Numbers to Persian"
+fix_line_position = tr "Masaf/Fix line Position"
+set_line_as_no_background = tr "Masaf/Set line as No Background"
 
 script_description = tr "Some Aegisub automation scripts specially designed for Right-To-Left language subtitles"
 script_author = "Majid Shamkhani"
-script_version = "1.16.1"
+script_version = "1.17.0"
 
 -- <<<<<<<<<<<<<<<<<<<<<<<<< Main Methods >>>>>>>>>>>>>>>>>>>>>>>>>
 
@@ -47,6 +49,9 @@ bgPosPattern = "^{\\p1\\pos%(.-%)}"
 
 rleChar = utf8.char(0x202B)
 pdfChar = utf8.char(0x202C)
+
+fixedPosTag = "\\fixedpos"
+noBgTag = "\\nobg"
 
 function AddBackground(subs)
 	if not videoLoaded() then
@@ -100,7 +105,7 @@ function AddBackground(subs)
 				textStyle = changeStyleAlignToFive(subs, styles, l)
 			end
 
-			if not string.find(l.text, "\\fixedpos") then
+			if not string.find(l.text, fixedPosTag) then
 				l.text = addPositionTag(l.text, positionTag)
 			end
 			subs[i] = l
@@ -756,6 +761,16 @@ function ConvertNumbersToPersian(subs)
 	end
 
 	aegisub.set_undo_point(convert_numbers_to_arabic)
+end
+
+function FixLinePosition(subs, selected)
+	addTag(subs, selected, fixedPosTag)
+	aegisub.set_undo_point(fix_line_position)
+end
+
+function SetLineAsNoBackground(subs, selected)
+	addTag(subs, selected, noBgTag)
+	aegisub.set_undo_point(set_line_as_no_background)
 end
 ------------------------- End of Main Methods -------------------
 
@@ -1478,6 +1493,14 @@ function replaceLineBreak(s)
 	return utf8.gsub(s, "\\N", "\n")
 end
 
+function addTag(subs, selected, tag)
+	for i = 1, #selected, 1 do
+		local line = subs[selected[i]]
+		line.text = "{" .. tag .. "}" .. line.text
+		subs[selected[i]] = line
+	end
+end
+
 ------------------------------ End of methods ------------------------------
 
 aegisub.register_macro(add_background_script_name, tr "Adds background before every line", AddBackground)
@@ -1512,3 +1535,5 @@ aegisub.register_macro(remove_background_lines, tr "Remove all Background lines"
 aegisub.register_macro(convert_numbers_to_english, tr "Convert Numbers to English", ConvertNumbersToEnglish)
 aegisub.register_macro(convert_numbers_to_arabic, tr "Convert Numbers to Arabic", ConvertNumbersToArabic)
 aegisub.register_macro(convert_numbers_to_persian, tr "Convert Numbers to Persian", ConvertNumbersToPersian)
+aegisub.register_macro(fix_line_position, tr "Fix line Position", FixLinePosition)
+aegisub.register_macro(set_line_as_no_background, tr "Set line as No Background", SetLineAsNoBackground)
