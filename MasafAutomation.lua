@@ -34,10 +34,11 @@ convert_numbers_to_arabic = tr "Masaf/Convert Numbers to Arabic"
 convert_numbers_to_persian = tr "Masaf/Convert Numbers to Persian"
 fix_line_position = tr "Masaf/Fix line Position"
 set_line_as_no_background = tr "Masaf/Set line as No Background"
+set_line_as_dont_correct_rtl = tr "Masaf/Set line as Don't Correct RTL"
 
 script_description = tr "Some Aegisub automation scripts specially designed for Right-To-Left language subtitles"
 script_author = "Majid Shamkhani"
-script_version = "1.17.0"
+script_version = "1.18.0"
 
 -- <<<<<<<<<<<<<<<<<<<<<<<<< Main Methods >>>>>>>>>>>>>>>>>>>>>>>>>
 
@@ -51,7 +52,8 @@ rleChar = utf8.char(0x202B)
 pdfChar = utf8.char(0x202C)
 
 fixedPosTag = "\\fixedpos"
-noBgTag = "\\nobg"
+noBgTag = "\\nobg" -- No Background
+dcrtlTag = "\\dcrtl" -- Dont Correct RTL
 
 function AddBackground(subs)
 	if not videoLoaded() then
@@ -772,6 +774,11 @@ function SetLineAsNoBackground(subs, selected)
 	addTag(subs, selected, noBgTag)
 	aegisub.set_undo_point(set_line_as_no_background)
 end
+
+function SetLineAsDontCorrectRtl(subs, selected)
+	addTag(subs, selected, dcrtlTag)
+	aegisub.set_undo_point(set_line_as_dont_correct_rtl)
+end
 ------------------------- End of Main Methods -------------------
 
 -- <<<<<<<<<<<<<<<<<<<<< Related Methods >>>>>>>>>>>>>>>>>>>>>>>>
@@ -1256,7 +1263,7 @@ end
 
 function canCorrectRtl(line)
 	-- dcrtl = dont correct rtl
-	local canCorrect = not string.find(line.text, "\\dcrtl")
+	local canCorrect = not string.find(line.text, dcrtlTag)
 	return canCorrect
 end
 ------------------------------- Rtl Editor Methods ----------------------
@@ -1537,3 +1544,4 @@ aegisub.register_macro(convert_numbers_to_arabic, tr "Convert Numbers to Arabic"
 aegisub.register_macro(convert_numbers_to_persian, tr "Convert Numbers to Persian", ConvertNumbersToPersian)
 aegisub.register_macro(fix_line_position, tr "Fix line Position", FixLinePosition)
 aegisub.register_macro(set_line_as_no_background, tr "Set line as No Background", SetLineAsNoBackground)
+aegisub.register_macro(set_line_as_dont_correct_rtl, tr "Set line as Don't Correct RTL", SetLineAsDontCorrectRtl)

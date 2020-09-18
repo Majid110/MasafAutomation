@@ -35,6 +35,7 @@ Some Aegisub automation scripts specially designed for Right-To-Left language su
 - Convert Numbers to Persian
 - Fix line Position
 - Set line as No Background
+- Set line as Don't Correct RTL
 
 ## Screenshots:
 
