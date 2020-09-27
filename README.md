@@ -9,7 +9,7 @@ Some Aegisub automation scripts specially designed for Right-To-Left language su
 - Add Backgrounds
 - Split line
 - Split line at Index
-- Rtl Correction - All line
+- Rtl Correction - All lines
 - Rtl Correction - Selected
 - Undo Rtl Correction - Selected
 - Show Rtl Editor

@@ -7,7 +7,7 @@ local utf8 = require "utf8"
 add_background_script_name = tr "Masaf/Add Backgrounds"
 split_script_name = tr "Masaf/Split line"
 split_at_index_script_name = tr "Masaf/Split line at Index"
-rtl_correction_script_name = tr "Masaf/Rtl Correction - All line"
+rtl_correction_script_name = tr "Masaf/Rtl Correction - All lines"
 rtl_correction_selected_line_script_name = tr "Masaf/Rtl Correction - Selected"
 undo_rtl_correction_script_name = tr "Masaf/Undo Rtl Correction - Selected"
 show_rtl_editor_script_name = tr "Masaf/Show Rtl Editor"
@@ -38,7 +38,7 @@ set_line_as_dont_correct_rtl = tr "Masaf/Set line as Don't Correct RTL"
 
 script_description = tr "Some Aegisub automation scripts specially designed for Right-To-Left language subtitles"
 script_author = "Majid Shamkhani"
-script_version = "1.18.0"
+script_version = "1.18.1"
 
 -- <<<<<<<<<<<<<<<<<<<<<<<<< Main Methods >>>>>>>>>>>>>>>>>>>>>>>>>
 
@@ -145,13 +145,14 @@ end
 
 ------------------------------ Split Line -----------------------------
 
-local SplitChars = {"||", "\\N", "%.", ",", "،", ";", "%?", "؟", "!", ":", "؛"}
+local SplitChars = {"||", "\\N", "%.", ",", "،", ";", "%?", "؟", "!", ":", "؛", "۔"}
 
 function Split(subs, selected)
 	if #selected > 1 then
 		return
 	end
 	local index = selected[1]
+	local textParts = {}
 	line = subs[index]
 	text = line.text
 
@@ -170,7 +171,9 @@ function Split(subs, selected)
 		goto continue
 	end
 
-	s, e, idx = getFirstChar(text, SplitChars)
+	textParts = getSubtitleTextParts(text)
+
+	s, e, idx = getFirstChar(text, textParts, SplitChars)
 	if e > 0 then
 		-- Remove split char from end of text
 		if idx <= 2 then
@@ -235,7 +238,7 @@ end
 --------------------------- RtlCorrection ---------------------
 
 local SpecialChars = [[%.,،%?؟«»!%-:]]
-local PunctuationMarks = [[%.,،%?؟:؛!;]]
+local PunctuationMarks = [[%.,،%?؟:؛!;۔]]
 local StartingBracketChars = [[%({%[<«“]]
 local EndingsBracketChars = [[%)}%]>»”]]
 local CodePattern = "({.-})"
@@ -312,14 +315,15 @@ function ShowRtlEditor(subs, selected)
 		return
 	end
 	local line = subs[selected[1]]
-	local result, text = openEditor(line.text)
+	local sourceText = utf8.gsub(line.text, "\\N", "\n")
+	local result, newText = openEditor(sourceText)
 
 	if not result then
 		return
 	end
 	-- Replace line break with \N
-	text = utf8.gsub(text, "\n", "\\N")
-	line.text = text
+	newText = utf8.gsub(newText, "\n", "\\N")
+	line.text = newText
 	subs[selected[1]] = line
 
 	aegisub.set_undo_point(show_rtl_editor_script_name)
@@ -962,7 +966,7 @@ Please "Open Video..." or "Use Dummy Video..." and try again.]])
 end
 
 function shouldAddBackground(line)
-	return (not string.find(line.style:lower(), "_nobg")) and (not string.find(line.text, "\\nobg")) or
+	return (not string.find(line.style:lower(), "_nobg")) and (not string.find(line.text, noBgTag)) or
 		(string.find(line.style:lower(), "_nobg") and (string.find(line.text, "\\addbg")))
 end
 
@@ -1001,15 +1005,41 @@ end
 
 --------------------- SplitLine Methods ----------------------------
 
-function getFirstChar(text, chars)
+function getFirstChar(text, textParts, chars)
+	local lText = text
 	local sStart = string.len(text)
 	local sEnd = 0
 	local idx = 0
+	local codeLength = 0
+	local codeIndex = 0
+
+	-- If text start with code, ignoring code
+	if #textParts > 1 then
+		lText = ""
+		for i = 1, #textParts do
+			if utf8.match(textParts[i], CodePattern) == nil then
+				break
+			end
+			codeIndex = i
+			codeLength = codeLength + utf8.len(textParts[i])
+		end
+
+		if codeIndex > 0 then
+			for i = codeIndex + 1, #textParts do
+				lText = lText .. textParts[i]
+			end
+		else
+			-- if code block is not first part
+			lText = text
+			codeLength = 0
+		end
+	end
+
 	for i = 1, #chars do
-		local s, e = utf8.find(text, chars[i])
-		if s ~= nil and s < sStart then
-			sStart = s
-			sEnd = e
+		local s, e = utf8.find(lText, chars[i])
+		if s ~= nil and s + codeLength < sStart then
+			sStart = s + codeLength
+			sEnd = e + codeLength
 			idx = i
 		end
 	end
@@ -1199,7 +1229,8 @@ function isRtl(s)
 		"و",
 		"ه",
 		"ی",
-		"ي"
+		"ي",
+		"۔"
 	}
 
 	local step = utf8.len(s)
@@ -1513,7 +1544,7 @@ end
 aegisub.register_macro(add_background_script_name, tr "Adds background before every line", AddBackground)
 aegisub.register_macro(split_script_name, tr "Split selected lines", Split)
 aegisub.register_macro(split_at_index_script_name, tr "Split selected line at index", SplitAtIndex)
-aegisub.register_macro(rtl_correction_script_name, tr "Corercts Rtl display problem for all line", RtlCorrection)
+aegisub.register_macro(rtl_correction_script_name, tr "Corercts Rtl display problem for all lines", RtlCorrection)
 aegisub.register_macro(
 	rtl_correction_selected_line_script_name,
 	tr "Corercts Rtl display problem for selected line",
