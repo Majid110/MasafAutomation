@@ -38,7 +38,7 @@ set_line_as_dont_correct_rtl = tr "Masaf/Set line as Don't Correct RTL"
 
 script_description = tr "Some Aegisub automation scripts specially designed for Right-To-Left language subtitles"
 script_author = "Majid Shamkhani"
-script_version = "1.18.1"
+script_version = "1.18.2"
 
 -- <<<<<<<<<<<<<<<<<<<<<<<<< Main Methods >>>>>>>>>>>>>>>>>>>>>>>>>
 
@@ -85,7 +85,7 @@ function AddBackground(subs)
 	local secondForContinuousBackground =
 		getNumberFromUser("\r\n Enter maximum second to make background continious: \r\n", 1)
 
-	local textStyle = nil
+	local lastLineStyle = nil
 	while i < n do
 		i = i + 1
 
@@ -103,8 +103,8 @@ function AddBackground(subs)
 			end
 
 			-- Set text style align to 5 once.
-			if textStyle == nil then
-				textStyle = changeStyleAlignToFive(subs, styles, l)
+			if lastLineStyle == nil or lastLineStyle ~= l.name then
+				lastLineStyle = changeStyleAlignToFive(subs, styles, l)
 			end
 
 			if not string.find(l.text, fixedPosTag) then
@@ -990,7 +990,7 @@ function changeStyleAlignToFive(subs, styles, line)
 	style.outline = 0
 	style.shadow = 0
 	updateStyle(subs, style.name, style)
-	return style
+	return style.name
 end
 
 function updateStyle(subs, styleName, style)
