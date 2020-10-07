@@ -35,10 +35,11 @@ convert_numbers_to_persian = tr "Masaf/Convert Numbers to Persian"
 fix_line_position = tr "Masaf/Fix line Position"
 set_line_as_no_background = tr "Masaf/Set line as No Background"
 set_line_as_dont_correct_rtl = tr "Masaf/Set line as Don't Correct RTL"
+set_line_as_dont_remove = tr "Masaf/Set line as Don't Remove"
 
 script_description = tr "Some Aegisub automation scripts specially designed for Right-To-Left language subtitles"
 script_author = "Majid Shamkhani"
-script_version = "1.18.2"
+script_version = "1.19.0"
 
 -- <<<<<<<<<<<<<<<<<<<<<<<<< Main Methods >>>>>>>>>>>>>>>>>>>>>>>>>
 
@@ -54,6 +55,7 @@ pdfChar = utf8.char(0x202C)
 fixedPosTag = "\\fixedpos"
 noBgTag = "\\nobg" -- No Background
 dcrtlTag = "\\dcrtl" -- Dont Correct RTL
+drl = "\\drl" -- Dont Remove Line
 
 function AddBackground(subs)
 	if not videoLoaded() then
@@ -96,9 +98,11 @@ function AddBackground(subs)
 		if l.class == "dialogue" and l.effect == "" and not l.comment and shouldAddBackground(l) then
 			-- remove already added background line
 			if bgShape ~= nil and i ~= bgShape.i and isBackgroundLine(l) then
-				subs.delete(i)
-				i = i - 1
-				n = n - 1
+				if canRemoveBackground(l) then
+					subs.delete(i)
+					i = i - 1
+					n = n - 1
+				end
 				goto continue
 			end
 
@@ -783,6 +787,11 @@ function SetLineAsDontCorrectRtl(subs, selected)
 	addTag(subs, selected, dcrtlTag)
 	aegisub.set_undo_point(set_line_as_dont_correct_rtl)
 end
+
+function SetLineAsDontRemove(subs, selected)
+	addTag(subs, selected, drl)
+	aegisub.set_undo_point(set_line_as_dont_remove)
+end
 ------------------------- End of Main Methods -------------------
 
 -- <<<<<<<<<<<<<<<<<<<<< Related Methods >>>>>>>>>>>>>>>>>>>>>>>>
@@ -1001,6 +1010,10 @@ function updateStyle(subs, styleName, style)
 			return
 		end
 	end
+end
+
+function canRemoveBackground(line)
+	return not string.find(line.text, drl)
 end
 
 --------------------- SplitLine Methods ----------------------------
@@ -1576,3 +1589,4 @@ aegisub.register_macro(convert_numbers_to_persian, tr "Convert Numbers to Persia
 aegisub.register_macro(fix_line_position, tr "Fix line Position", FixLinePosition)
 aegisub.register_macro(set_line_as_no_background, tr "Set line as No Background", SetLineAsNoBackground)
 aegisub.register_macro(set_line_as_dont_correct_rtl, tr "Set line as Don't Correct RTL", SetLineAsDontCorrectRtl)
+aegisub.register_macro(set_line_as_dont_remove, tr "Set line as Don't Remove", SetLineAsDontRemove)
