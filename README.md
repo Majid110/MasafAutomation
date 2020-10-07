@@ -36,6 +36,7 @@ Some Aegisub automation scripts specially designed for Right-To-Left language su
 - Fix line Position
 - Set line as No Background
 - Set line as Don't Correct RTL
+- Set line as Don't Remove
 
 ## Screenshots:
 
