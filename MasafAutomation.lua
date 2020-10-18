@@ -997,7 +997,8 @@ function changeStyleAlignToFive(subs, styles, line)
 	local style = styles[line.style]
 	style.align = 5
 	style.outline = 0
-	style.shadow = 0
+	style.shadow = 1
+	style.borderstyle = 1
 	updateStyle(subs, style.name, style)
 	return style.name
 end
