@@ -39,23 +39,24 @@ set_line_as_dont_remove = tr "Masaf/Set line as Don't Remove"
 
 script_description = tr "Some Aegisub automation scripts specially designed for Right-To-Left language subtitles"
 script_author = "Majid Shamkhani"
-script_version = "1.19.1"
+script_version = "1.19.2"
 
 -- <<<<<<<<<<<<<<<<<<<<<<<<< Main Methods >>>>>>>>>>>>>>>>>>>>>>>>>
 
 -- ------------------------- AddBackground ---------------------
 
-bgPattern = [[{\p1\pos%(.-%)}m %d+ %d+ l %d+ %d+ l %d+ %d+ l %d+ %d+ l %d+ %d+]]
-posPattern = "^{\\pos%(.-%)}"
-bgPosPattern = "^{\\p1\\pos%(.-%)}"
+BgPattern = [[{\p1\pos%(.-%)}m %d+ %d+ l %d+ %d+ l %d+ %d+ l %d+ %d+ l %d+ %d+]]
+PosPattern = "^{\\pos%(.-%)}"
+BgPosPattern = "^{\\p1\\pos%(.-%)}"
+SplitChars = {"||", "\\N", "%.", ",", "،", ";", "%?", "؟", "!", ":", "؛", "۔"}
 
-rleChar = utf8.char(0x202B)
-pdfChar = utf8.char(0x202C)
+RleChar = utf8.char(0x202B)
+PdfChar = utf8.char(0x202C)
 
-fixedPosTag = "\\fixedpos"
-noBgTag = "\\nobg" -- No Background
-dcrtlTag = "\\dcrtl" -- Dont Correct RTL
-drl = "\\drl" -- Dont Remove Line
+FixedPosTag = "\\fixedpos"
+NoBgTag = "\\nobg" -- No Background
+DcrtlTag = "\\dcrtl" -- Dont Correct RTL
+Drl = "\\drl" -- Dont Remove Line
 
 function AddBackground(subs)
 	if not videoLoaded() then
@@ -115,7 +116,7 @@ function AddBackground(subs)
 				lastLineStyle = changeStyleAlignToFive(subs, styles, l)
 			end
 
-			if not string.find(l.text, fixedPosTag) then
+			if not string.find(l.text, FixedPosTag) then
 				l.text = addPositionTag(l.text, positionTag)
 			end
 			subs[i] = l
@@ -153,27 +154,25 @@ end
 
 ------------------------------ Split Line -----------------------------
 
-local SplitChars = {"||", "\\N", "%.", ",", "،", ";", "%?", "؟", "!", ":", "؛", "۔"}
-
 function Split(subs, selected)
 	if #selected > 1 then
 		return
 	end
 	local index = selected[1]
 	local textParts = {}
-	line = subs[index]
-	text = line.text
+	local line = subs[index]
+	local text = line.text
 
-	line2 = table.copy(line)
+	local line2 = table.copy(line)
 
 	-- Finding manual splittnig symbol -> ||
-	local s, e = utf8.find(text, SplitChars[1])
+	s, e = utf8.find(text, SplitChars[1])
 	if s then
 		line.text = utf8.sub(text, 1, s - 1)
 		line2.text = utf8.sub(text, e + 1, utf8.len(text))
-		line.text = applyRtlCorrection(trim(line.text))
-		line2.text = applyRtlCorrection(trim(line2.text))
-		changeLineTimeAterSplit(text, line, line2)
+		line.text = rtlCorrectNonCodeText(trim(line.text))
+		line2.text = rtlCorrectNonCodeText(trim(line2.text))
+		changeLineTimeAfterSplit(text, line, line2)
 		subs[index] = line
 		subs.insert(index + 1, line2)
 		goto continue
@@ -181,8 +180,8 @@ function Split(subs, selected)
 
 	textParts = getSubtitleTextParts(text)
 
-	s, e, idx = getFirstChar(text, textParts, SplitChars)
-	if e > 0 then
+	s, e, idx = getFirstChar(text, textParts)
+	if idx > 0 then
 		-- Remove split char from end of text
 		if idx <= 2 then
 			line.text = utf8.sub(text, 1, s - 1)
@@ -191,9 +190,9 @@ function Split(subs, selected)
 			line.text = utf8.sub(text, 1, e)
 			line2.text = utf8.sub(text, e + 1, utf8.len(text))
 		end
-		changeLineTimeAterSplit(text, line, line2)
-		line.text = applyRtlCorrection(trim(line.text))
-		line2.text = applyRtlCorrection(trim(line2.text))
+		changeLineTimeAfterSplit(text, line, line2)
+		line.text = rtlCorrectNonCodeText(trim(line.text))
+		line2.text = rtlCorrectNonCodeText(trim(line2.text))
 		subs[index] = line
 		subs.insert(index + 1, line2)
 	end
@@ -233,9 +232,9 @@ function SplitAtIndex(subs, selected)
 			line.text = utf8.sub(text, 1, e)
 			line2.text = utf8.sub(text, e + 1, utf8.len(text))
 		end
-		changeLineTimeAterSplit(text, line, line2)
-		line.text = applyRtlCorrection(line.text)
-		line2.text = applyRtlCorrection(line2.text)
+		changeLineTimeAfterSplit(text, line, line2)
+		line.text = rtlCorrectNonCodeText(trim(line.text))
+		line2.text = rtlCorrectNonCodeText(trim(line2.text))
 		subs[selected[1]] = line
 		subs.insert(selected[1] + 1, line2)
 	end
@@ -260,13 +259,13 @@ function RtlCorrection(subs)
 	while i < n do
 		i = i + 1
 		local l = subs[i]
-		if l.class == "dialogue" and l.effect == "" and not l.comment and canCorrectRtl(l) then
+		if l.class == "dialogue" and l.effect == "" and not l.comment and canCorrectRtl(l.text) then
 			if not isBackgroundLine(l) then
 				local parts = getSubtitleTextParts(l.text)
 				local text = ""
 				for k = 1, #parts do
 					local t = parts[k]
-					t = applyRtlCorrection(t)
+					t = rtlCorrectNonCodeText(t)
 					text = text .. t
 				end
 				l.text = text
@@ -289,15 +288,8 @@ function RtlCorrectorSelectedLine(subs, selected)
 
 	-- start processing lines
 
-	if (not isBackgroundLine(line)) and canCorrectRtl(line) then
-		local parts = getSubtitleTextParts(line.text)
-		local text = ""
-		for k = 1, #parts do
-			local t = parts[k]
-			t = applyRtlCorrection(t)
-			text = text .. t
-		end
-		line.text = text
+	if (not isBackgroundLine(line)) then
+		line.text = rtlCorrectIfAllowed(line.text)
 		subs[selected[1]] = line
 	end
 
@@ -324,7 +316,9 @@ function ShowRtlEditor(subs, selected)
 		return
 	end
 	local line = subs[selected[1]]
-	local sourceText = utf8.gsub(line.text, "\\N", "\n")
+	local textParts = getSubtitleTextParts(line.text)
+	local codeText, plainText = getCodeAndPlainTextPart(line.text, textParts)
+	local sourceText = utf8.gsub(plainText, "\\N", "\n")
 	local result, newText = openEditor(sourceText)
 
 	if not result then
@@ -332,7 +326,8 @@ function ShowRtlEditor(subs, selected)
 	end
 	-- Replace line break with \N
 	newText = utf8.gsub(newText, "\n", "\\N")
-	line.text = newText
+	newText = rtlCorrectNonCodeText(newText)
+	line.text = codeText .. newText
 	subs[selected[1]] = line
 
 	aegisub.set_undo_point(show_rtl_editor_script_name)
@@ -421,7 +416,7 @@ end
 ---------------------- Select playing line -------------------------
 function SelectPlayingLine(subs, selected)
 	local vframe = aegisub.project_properties().video_position
-	fr2ms = aegisub.ms_from_frame
+	local fr2ms = aegisub.ms_from_frame
 
 	local j = #selected
 	if j < 1 or j == #subs then
@@ -522,8 +517,12 @@ function MoveLastTextPart(subs, selected)
 	end
 	local line = subs[index]
 	local nextLine = subs[index + 1]
-	local text = line.text
 	local oldLine = table.copy(line)
+
+	local text, code = removeRtlChars(line.text), ""
+	local textParts = getSubtitleTextParts(text)
+	code, text = getCodeAndPlainTextPart(text, textParts)
+
 	local parts = getTextSplitCharsParts(text)
 	if #parts == 0 then
 		return
@@ -535,11 +534,14 @@ function MoveLastTextPart(subs, selected)
 		text = text .. textParts[i] .. " "
 	end
 
-	line.text = trim(text)
-	nextLine.text = trim(textParts[#textParts]) .. " " .. nextLine.text
-	line.text = applyRtlCorrection(line.text)
-	nextLine.text = applyRtlCorrection(nextLine.text)
-	changeLineTimeAterMove(oldLine, line, nextLine)
+	local nextText, nextCode = removeRtlChars(trim(nextLine.text)), ""
+	local nextTextParts = getSubtitleTextParts(nextText)
+	nextCode, nextText = getCodeAndPlainTextPart(nextText, nextTextParts)
+
+	nextText = textParts[#textParts] .. " " .. nextText
+	line.text = code .. rtlCorrectIfAllowed(text)
+	nextLine.text = nextCode .. rtlCorrectIfAllowed(nextText)
+	changeLineTimeAfterMove(oldLine, line, nextLine)
 	subs[index] = line
 	subs[index + 1] = nextLine
 
@@ -556,24 +558,32 @@ function MoveFirstPartOfNext(subs, selected)
 	end
 	local line = subs[index]
 	local nextLine = subs[index + 1]
-	local text = nextLine.text
+
+	local nextText, nextCode = ""
+	nextText = removeRtlChars(nextLine.text)
+	local nextTextParts = getSubtitleTextParts(nextText)
+	nextCode, nextText = getCodeAndPlainTextPart(nextText, nextTextParts)
+
 	local oldLine = table.copy(line)
-	local parts = getTextSplitCharsParts(text)
+	local parts = getTextSplitCharsParts(nextText)
 	if #parts == 0 then
 		return
 	end
-	local textParts = getTextPartsBySplitCharIndexes(parts, text)
+	local textParts = getTextPartsBySplitCharIndexes(parts, nextText)
 
-	text = ""
+	nextText = ""
 	for i = 2, #textParts, 1 do
-		text = text .. textParts[i] .. " "
+		nextText = nextText .. textParts[i] .. " "
 	end
 
-	nextLine.text = trim(text)
-	line.text = line.text .. " " .. trim(textParts[1])
-	line.text = applyRtlCorrection(line.text)
-	nextLine.text = applyRtlCorrection(nextLine.text)
-	changeLineTimeAterMove(oldLine, line, nextLine)
+	nextText = nextCode .. nextText
+	nextLine.text = rtlCorrectIfAllowed(nextText)
+
+	local text = removeRtlChars(line.text)
+	text = text .. " " .. trim(textParts[1])
+	line.text = rtlCorrectIfAllowed(text)
+
+	changeLineTimeAfterMove(oldLine, line, nextLine)
 	subs[index] = line
 	subs[index + 1] = nextLine
 
@@ -591,7 +601,7 @@ function MoveLastWord(subs, selected)
 	end
 	local line = subs[index]
 	local nextLine = subs[index + 1]
-	local text = trim(line.text)
+	local text = trim(removeRtlChars(line.text))
 	local oldLine = table.copy(line)
 	local lastWord = getLastWord(text)
 	if lastWord == nil then
@@ -600,10 +610,15 @@ function MoveLastWord(subs, selected)
 
 	local textLen = utf8.len(text)
 	line.text = utf8.sub(text, 1, textLen - utf8.len(lastWord) - 1)
-	nextLine.text = lastWord .. " " .. nextLine.text
-	line.text = applyRtlCorrection(trim(line.text))
-	nextLine.text = applyRtlCorrection(trim(nextLine.text))
-	changeLineTimeAterMove(oldLine, line, nextLine)
+
+	local nextText, nextCode = removeRtlChars(nextLine.text), ""
+	local textParts = getSubtitleTextParts(nextText)
+	nextCode, nextText = getCodeAndPlainTextPart(text, textParts)
+
+	nextText = nextCode .. lastWord .. " " .. nextText
+	line.text = rtlCorrectIfAllowed(trim(line.text))
+	nextLine.text = rtlCorrectIfAllowed(trim(nextText))
+	changeLineTimeAfterMove(oldLine, line, nextLine)
 	subs[index] = line
 	subs[index + 1] = nextLine
 
@@ -620,7 +635,11 @@ function MoveFirstWordOfNext(subs, selected)
 	end
 	local line = subs[index]
 	local nextLine = subs[index + 1]
-	local text = trim(nextLine.text)
+
+	local text, code = removeRtlChars(trim(nextLine.text)), ""
+	local textParts = getSubtitleTextParts(text)
+	code, text = getCodeAndPlainTextPart(text, textParts)
+
 	local oldLine = table.copy(line)
 	local firstWord = getFirstWord(text)
 	if firstWord == nil then
@@ -628,10 +647,12 @@ function MoveFirstWordOfNext(subs, selected)
 	end
 
 	line.text = line.text .. " " .. firstWord
-	nextLine.text = utf8.sub(text, utf8.len(firstWord) + 1, utf8.len(text))
-	line.text = applyRtlCorrection(trim(line.text))
-	nextLine.text = applyRtlCorrection(trim(nextLine.text))
-	changeLineTimeAterMove(oldLine, line, nextLine)
+	line.text = rtlCorrectIfAllowed(line.text)
+
+	text = code .. utf8.sub(text, utf8.len(firstWord) + 2, utf8.len(text))
+	nextLine.text = rtlCorrectIfAllowed(text)
+
+	changeLineTimeAfterMove(oldLine, line, nextLine)
 	subs[index] = line
 	subs[index + 1] = nextLine
 
@@ -710,7 +731,7 @@ function ConvertNumbersToEnglish(subs)
 	while i < n do
 		i = i + 1
 		local l = subs[i]
-		if l.class == "dialogue" and l.effect == "" and not l.comment and canCorrectRtl(l) then
+		if l.class == "dialogue" and l.effect == "" and not l.comment and canCorrectRtl(l.text) then
 			if not isBackgroundLine(l) then
 				local parts = getSubtitleTextParts(l.text)
 				local text = ""
@@ -735,7 +756,7 @@ function ConvertNumbersToArabic(subs)
 	while i < n do
 		i = i + 1
 		local l = subs[i]
-		if l.class == "dialogue" and l.effect == "" and not l.comment and canCorrectRtl(l) then
+		if l.class == "dialogue" and l.effect == "" and not l.comment and canCorrectRtl(l.text) then
 			if not isBackgroundLine(l) then
 				local parts = getSubtitleTextParts(l.text)
 				local text = ""
@@ -760,7 +781,7 @@ function ConvertNumbersToPersian(subs)
 	while i < n do
 		i = i + 1
 		local l = subs[i]
-		if l.class == "dialogue" and l.effect == "" and not l.comment and canCorrectRtl(l) then
+		if l.class == "dialogue" and l.effect == "" and not l.comment and canCorrectRtl(l.text) then
 			if not isBackgroundLine(l) then
 				local parts = getSubtitleTextParts(l.text)
 				local text = ""
@@ -779,22 +800,22 @@ function ConvertNumbersToPersian(subs)
 end
 
 function FixLinePosition(subs, selected)
-	addTag(subs, selected, fixedPosTag)
+	addTag(subs, selected, FixedPosTag)
 	aegisub.set_undo_point(fix_line_position)
 end
 
 function SetLineAsNoBackground(subs, selected)
-	addTag(subs, selected, noBgTag)
+	addTag(subs, selected, NoBgTag)
 	aegisub.set_undo_point(set_line_as_no_background)
 end
 
 function SetLineAsDontCorrectRtl(subs, selected)
-	addTag(subs, selected, dcrtlTag)
+	addTag(subs, selected, DcrtlTag)
 	aegisub.set_undo_point(set_line_as_dont_correct_rtl)
 end
 
 function SetLineAsDontRemove(subs, selected)
-	addTag(subs, selected, drl)
+	addTag(subs, selected, Drl)
 	aegisub.set_undo_point(set_line_as_dont_remove)
 end
 ------------------------- End of Main Methods -------------------
@@ -860,7 +881,7 @@ function getBackgroundLine(subs, styles)
 	--aegisub.debug.out(subs[1].text)
 	local firstLine, i = getFirstSubtitleLine(subs)
 
-	if firstLine == nil or string.match(firstLine.text, bgPattern) == nil then
+	if firstLine == nil or string.match(firstLine.text, BgPattern) == nil then
 		createBackgroundStyle(subs, styles)
 		createBackgroundLine(subs, firstLine, i)
 		showMessage(
@@ -966,11 +987,11 @@ function createBackgroundLine(subs, line, idx)
 end
 
 function isBackgroundLine(line)
-	return string.match(line.text, bgPattern) ~= nil
+	return string.match(line.text, BgPattern) ~= nil
 end
 
 function videoLoaded()
-	w = getVideoWidth()
+	local w = getVideoWidth()
 	if w == nil then
 		showMessage([[There is no loaded video. 
 Please "Open Video..." or "Use Dummy Video..." and try again.]])
@@ -980,12 +1001,12 @@ Please "Open Video..." or "Use Dummy Video..." and try again.]])
 end
 
 function shouldAddBackground(line)
-	return (not string.find(line.style:lower(), "_nobg")) and (not string.find(line.text, noBgTag)) or
+	return (not string.find(line.style:lower(), "_nobg")) and (not string.find(line.text, NoBgTag)) or
 		(string.find(line.style:lower(), "_nobg") and (string.find(line.text, "\\addbg")))
 end
 
 function getPositionTag(text)
-	local pos = string.match(text, bgPosPattern)
+	local pos = string.match(text, BgPosPattern)
 	if pos ~= nil then
 		return string.gsub(pos, "\\p1", "")
 	end
@@ -1019,64 +1040,45 @@ function updateStyle(subs, styleName, style)
 end
 
 function canRemoveBackground(line)
-	return not string.find(line.text, drl)
+	return not string.find(line.text, Drl)
 end
 
 --------------------- SplitLine Methods ----------------------------
 
-function getFirstChar(text, textParts, chars)
-	local lText = text
-	local sStart = string.len(text)
+function getFirstChar(text, textParts)
+	local sStart = 0
 	local sEnd = 0
 	local idx = 0
-	local codeLength = 0
-	local codeIndex = 0
 
-	-- If text start with code, ignoring code
-	if #textParts > 1 then
-		lText = ""
-		for i = 1, #textParts do
-			if utf8.match(textParts[i], CodePattern) == nil then
-				break
-			end
-			codeIndex = i
-			codeLength = codeLength + utf8.len(textParts[i])
-		end
+	local codeText, plainText = getCodeAndPlainTextPart(text, textParts)
+	local codeLength = string.len(codeText)
+	sStart = string.len(plainText)
 
-		if codeIndex > 0 then
-			for i = codeIndex + 1, #textParts do
-				lText = lText .. textParts[i]
-			end
-		else
-			-- if code block is not first part
-			lText = text
-			codeLength = 0
-		end
-	end
-
-	for i = 1, #chars do
-		local s, e = utf8.find(lText, chars[i])
-		if s ~= nil and s + codeLength < sStart then
-			sStart = s + codeLength
-			sEnd = e + codeLength
+	for i = 1, #SplitChars do
+		local s, e = utf8.find(plainText, SplitChars[i])
+		if s ~= nil and s < sStart then
+			sStart = s
+			sEnd = e
 			idx = i
 		end
 	end
-	return sStart, sEnd, idx
+	return sStart + codeLength, sEnd + codeLength, idx
 end
 
-function changeLineTimeAterSplit(text, line1, line2)
-	start = line1.start_time
-	endt = line1.end_time
-	dur = endt - start
+function changeLineTimeAfterSplit(text, line1, line2)
+	local start = line1.start_time
+	local endt = line1.end_time
+	local dur = endt - start
 	--aegisub.log(dur)
-	l = dur / utf8.len(text)
+	local l = dur / utf8.len(text)
 	line1.end_time = start + utf8.len(line1.text) * l
 	line2.start_time = line1.end_time
 	return line1, line2
 end
 
-function changeLineTimeAterMove(oldLine, line1, line2)
+function changeLineTimeAfterMove(oldLine, line1, line2)
+	local start, endt, dur, l = 0
+
 	if line2.start_time == line2.end_time then
 		start = oldLine.start_time
 		endt = oldLine.end_time
@@ -1095,11 +1097,11 @@ function changeLineTimeAterMove(oldLine, line1, line2)
 end
 
 function getNumberFromUser(msg, defaultValue)
-	config = {
+	local config = {
 		{class = "label", label = msg, x = 0, y = 0},
 		{class = "intedit", name = "inputNumber", value = defaultValue, x = 0, y = 1}
 	}
-	btn, result = aegisub.dialog.display(config, {"OK", "Cancel"}, {ok = "OK", cancel = "Cancel"})
+	local btn, result = aegisub.dialog.display(config, {"OK", "Cancel"}, {ok = "OK", cancel = "Cancel"})
 	if btn then
 		local r = tonumber(result.inputNumber)
 		return r, true
@@ -1115,9 +1117,10 @@ function getCharAtIndex(text, index)
 			return nil
 		end
 		-- -1 means last index of array
-		if idx == 0 then
-			index = #parts
-		end
+		-- if idx == 0 then
+		--	index = #parts
+		-- end
+
 		-- returns start, end, SplitCharIndex
 		return parts[index][1], parts[index][2], parts[index][3]
 	end
@@ -1125,11 +1128,11 @@ function getCharAtIndex(text, index)
 end
 
 function getTextFromUser()
-	config = {
+	local config = {
 		{class = "label", label = "\r\n Enter your code here: \r\n", x = 0, y = 0},
 		{class = "textbox", name = "txtCode", value = "{\\ }", x = 0, y = 1, width = 10}
 	}
-	btn, result = aegisub.dialog.display(config, {"OK", "Cancel"}, {ok = "OK", cancel = "Cancel"})
+	local btn, result = aegisub.dialog.display(config, {"OK", "Cancel"}, {ok = "OK", cancel = "Cancel"})
 	if btn then
 		return result.txtCode
 	end
@@ -1139,8 +1142,14 @@ end
 ----------------------- Rtl Correction Methods ---------------------
 
 function removeRtlChars(s)
-	local replaced = utf8.gsub(s, rleChar, "")
-	local replaced = utf8.gsub(replaced, pdfChar, "")
+	local lreChar = utf8.char(0x202A)
+	local lroChar = utf8.char(0x202D)
+	local rloChar = utf8.char(0x202E)
+	local replaced = utf8.gsub(s, RleChar, "")
+	local replaced = utf8.gsub(replaced, PdfChar, "")
+	local replaced = utf8.gsub(replaced, lreChar, "")
+	local replaced = utf8.gsub(replaced, lroChar, "")
+	local replaced = utf8.gsub(replaced, rloChar, "")
 	return replaced
 end
 
@@ -1148,9 +1157,9 @@ function addRleToEachNoneAlphabeticChars(s)
 	local pattern = "([{" .. SpecialChars .. "}])"
 
 	-- Start of right to left embeding character
-	local replaced = utf8.gsub(s, pattern, pdfChar .. rleChar .. "%1" .. pdfChar .. rleChar)
-	replaced = utf8.gsub(replaced, "\\N", "\\N" .. rleChar)
-	return rleChar .. replaced
+	local replaced = utf8.gsub(s, pattern, PdfChar .. RleChar .. "%1" .. PdfChar .. RleChar)
+	replaced = utf8.gsub(replaced, "\\N", "\\N" .. RleChar)
+	return RleChar .. replaced
 end
 
 function removeSpacesBeforePunctuationMarks(s)
@@ -1294,7 +1303,7 @@ function getSubtitleTextParts(s)
 	return parts
 end
 
-function applyRtlCorrection(s)
+function rtlCorrectNonCodeText(s)
 	if utf8.match(s, CodePattern) == nil then
 		s = removeRtlChars(s)
 		s = removeDoubleSpace(s)
@@ -1311,19 +1320,37 @@ function applyRtlCorrection(s)
 	return s
 end
 
-function canCorrectRtl(line)
+function canCorrectRtl(text)
 	-- dcrtl = dont correct rtl
-	local canCorrect = not string.find(line.text, dcrtlTag)
+	local canCorrect = not string.find(text, DcrtlTag)
 	return canCorrect
+end
+
+function rtlCorrectTextWithCode(s)
+	local parts = getSubtitleTextParts(s)
+	local text = ""
+	for k = 1, #parts do
+		local t = parts[k]
+		t = rtlCorrectNonCodeText(t)
+		text = text .. t
+	end
+	return text
+end
+
+function rtlCorrectIfAllowed(s)
+	if not canCorrectRtl(s) then
+		return s
+	end
+	return rtlCorrectTextWithCode(s)
 end
 ------------------------------- Rtl Editor Methods ----------------------
 
 function openEditor(str)
-	config = {
+	local config = {
 		{class = "label", label = "\r\n Press Ctrl+Shift to switch to Right to left mode \r\n", x = 0, y = 0},
 		{class = "textbox", name = "editor", value = str, x = 0, y = 1, width = 12, height = 8}
 	}
-	btn, result = aegisub.dialog.display(config, {"OK", "Cancel"}, {ok = "OK", cancel = "Cancel"})
+	local btn, result = aegisub.dialog.display(config, {"OK", "Cancel"}, {ok = "OK", cancel = "Cancel"})
 	return btn, result.editor
 end
 
@@ -1331,11 +1358,10 @@ end
 
 function getTextSplitCharsParts(text)
 	local parts = {}
-	local idx = 0
 	text = trim(text)
 
 	for i = 1, #SplitChars do
-		txt = text
+		local txt = text
 		local ln = 0
 		while txt ~= "" do
 			local s, e = utf8.find(txt, SplitChars[i])
@@ -1351,6 +1377,14 @@ function getTextSplitCharsParts(text)
 			end
 		end
 		::continue::
+	end
+
+	-- if text not contains any SplitChars
+	if #parts == 0 and text ~= "" then
+		table.insert(parts, {})
+		table.insert(parts[#parts], 1)
+		table.insert(parts[#parts], utf8.len(text))
+		table.insert(parts[#parts], 1)
 	end
 
 	table.sort(parts, compare)
@@ -1507,10 +1541,10 @@ function cleanTags(text)
 end
 
 function showMessage(msg)
-	config = {
+	local config = {
 		{class = "label", label = "\r\n" .. msg .. "\r\n", x = 0, y = 0}
 	}
-	btn, result = aegisub.dialog.display(config, {"OK"}, {ok = "OK"})
+	local btn, result = aegisub.dialog.display(config, {"OK"}, {ok = "OK"})
 end
 
 function compare(a, b)
@@ -1523,7 +1557,7 @@ function trim(s)
 end
 
 function removePosTag(text)
-	return string.gsub(text, posPattern, "")
+	return string.gsub(text, PosPattern, "")
 end
 
 function removeDoubleSpace(s)
@@ -1539,9 +1573,9 @@ function secondsToClock(seconds)
 	if seconds <= 0 then
 		return "00:00:00"
 	else
-		hours = string.format("%02.f", math.floor(seconds / 3600))
-		mins = string.format("%02.f", math.floor(seconds / 60 - (hours * 60)))
-		secs = string.format("%02.f", math.floor(seconds - hours * 3600 - mins * 60))
+		local hours = string.format("%02.f", math.floor(seconds / 3600))
+		local mins = string.format("%02.f", math.floor(seconds / 60 - (hours * 60)))
+		local secs = string.format("%02.f", math.floor(seconds - hours * 3600 - mins * 60))
 		return hours .. ":" .. mins .. ":" .. secs
 	end
 end
@@ -1556,6 +1590,31 @@ function addTag(subs, selected, tag)
 		line.text = "{" .. tag .. "}" .. line.text
 		subs[selected[i]] = line
 	end
+end
+
+function getCodeAndPlainTextPart(text, textParts)
+	local plainText = ""
+	local codeText = ""
+	local codeIndex = 0
+
+	if #textParts > 0 then
+		for i = 1, #textParts do
+			if utf8.match(textParts[i], CodePattern) == nil then
+				break
+			end
+			codeIndex = i
+			codeText = codeText .. textParts[i]
+		end
+
+		if codeIndex > 0 then
+			for i = codeIndex + 1, #textParts do
+				plainText = plainText .. textParts[i]
+			end
+		else
+			plainText = text
+		end
+	end
+	return codeText, plainText
 end
 
 ------------------------------ End of methods ------------------------------
