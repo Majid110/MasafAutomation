@@ -5,37 +5,46 @@ local utf8 = require "utf8"
 --local inspect = require "inspect"
 
 add_background_script_name = tr "Masaf/Add Backgrounds"
+remove_background_lines = tr "Masaf/Remove all Background lines"
+
+------------ Corrections -------------
+rtl_correction_script_name = tr "Masaf/Correction/Rtl Correction - All lines"
+rtl_correction_selected_line_script_name = tr "Masaf/Correction/Rtl Correction - Selected"
+undo_rtl_correction_script_name = tr "Masaf/Correction/Undo Rtl Correction - Selected"
+convert_numbers_to_english = tr "Masaf/Correction/Convert Numbers to English"
+convert_numbers_to_arabic = tr "Masaf/Correction/Convert Numbers to Arabic"
+convert_numbers_to_persian = tr "Masaf/Correction/Convert Numbers to Persian"
+
+------------ Text Movements -------------
+shift_start_line_forward = tr "Masaf/Text Movement/Shift start line forward"
+shift_start_line_backward = tr "Masaf/Text Movement/Shift start line backward"
+shift_end_line_forward = tr "Masaf/Text Movement/Shift end line forward"
+shift_end_line_backward = tr "Masaf/Text Movement/Shift end line backward"
+move_last_text_part = tr "Masaf/Text Movement/Move last text part"
+move_first_part_of_next = tr "Masaf/Text Movement/Move first part of next"
+move_last_word = tr "Masaf/Text Movement/Move last word"
+move_first_word_of_next = tr "Masaf/Text Movement/Move first word of next"
+
 split_script_name = tr "Masaf/Split line"
 split_at_index_script_name = tr "Masaf/Split line at Index"
-rtl_correction_script_name = tr "Masaf/Rtl Correction - All lines"
-rtl_correction_selected_line_script_name = tr "Masaf/Rtl Correction - Selected"
-undo_rtl_correction_script_name = tr "Masaf/Undo Rtl Correction - Selected"
 show_rtl_editor_script_name = tr "Masaf/Show Rtl Editor"
-unify_background_lines_script_name = tr "Masaf/Unify Background lines"
-add_code_to_selected_lines_script_name = tr "Masaf/Add Code to Selected lines"
-remove_line_break_script_name = tr "Masaf/Remove line Breaks"
-import_text_to_selected_lines = tr "Masaf/Import text to selected Lines"
-select_playing_line = tr "Masaf/Select playing line"
 make_next_line_continuous = tr "Masaf/Make next line continuous"
-shift_start_line_forward = tr "Masaf/Shift start line forward"
-shift_start_line_backward = tr "Masaf/Shift start line backward"
-shift_end_line_forward = tr "Masaf/Shift end line forward"
-shift_end_line_backward = tr "Masaf/Shift end line backward"
-move_last_text_part = tr "Masaf/Move last text part"
-move_first_part_of_next = tr "Masaf/Move first part of next"
-move_last_word = tr "Masaf/Move last word"
-move_first_word_of_next = tr "Masaf/Move first word of next"
+remove_line_break_script_name = tr "Masaf/Remove line Breaks"
 remove_position_tags = tr "Masaf/Remove Position tags"
-display_sum_of_times = tr "Masaf/Display sum of times"
+select_playing_line = tr "Masaf/Select playing line"
 generate_srt_like_text = tr "Masaf/Generate SRT like text"
-remove_background_lines = tr "Masaf/Remove all Background lines"
-convert_numbers_to_english = tr "Masaf/Convert Numbers to English"
-convert_numbers_to_arabic = tr "Masaf/Convert Numbers to Arabic"
-convert_numbers_to_persian = tr "Masaf/Convert Numbers to Persian"
-fix_line_position = tr "Masaf/Fix line Position"
-set_line_as_no_background = tr "Masaf/Set line as No Background"
-set_line_as_dont_correct_rtl = tr "Masaf/Set line as Don't Correct RTL"
-set_line_as_dont_remove = tr "Masaf/Set line as Don't Remove"
+
+------------ Special Tags ------------
+fix_line_position = tr "Masaf/Special Tags/Fix line Position"
+set_line_as_no_background = tr "Masaf/Special Tags/Set line as No Background"
+set_line_as_dont_correct_rtl = tr "Masaf/Special Tags/Set line as Don't Correct RTL"
+set_line_as_dont_remove = tr "Masaf/Special Tags/Set line as Don't Remove"
+
+------------ Miscs ------------
+unify_background_lines_script_name = tr "Masaf/Misc/Unify Background lines"
+add_code_to_selected_lines_script_name = tr "Masaf/Misc/Add Code to Selected lines"
+import_text_to_selected_lines = tr "Masaf/Misc/Import text to selected Lines"
+display_sum_of_times = tr "Masaf/Misc/Display sum of times"
 
 script_description = tr "Some Aegisub automation scripts specially designed for Right-To-Left language subtitles"
 script_author = "Majid Shamkhani"
@@ -1620,22 +1629,21 @@ end
 ------------------------------ End of methods ------------------------------
 
 aegisub.register_macro(add_background_script_name, tr "Adds background before every line", AddBackground)
-aegisub.register_macro(split_script_name, tr "Split selected lines", Split)
-aegisub.register_macro(split_at_index_script_name, tr "Split selected line at index", SplitAtIndex)
+aegisub.register_macro(remove_background_lines, tr "Remove all Background lines", RemoveBackgroundLines)
+
+------------ Corrections -------------
 aegisub.register_macro(rtl_correction_script_name, tr "Corercts Rtl display problem for all lines", RtlCorrection)
+aegisub.register_macro(undo_rtl_correction_script_name, tr "Undo Rtl correction", UndoRtlCorrection)
 aegisub.register_macro(
 	rtl_correction_selected_line_script_name,
 	tr "Corercts Rtl display problem for selected line",
 	RtlCorrectorSelectedLine
 )
-aegisub.register_macro(undo_rtl_correction_script_name, tr "Undo Rtl correction", UndoRtlCorrection)
-aegisub.register_macro(show_rtl_editor_script_name, tr "Show Rtl editor", ShowRtlEditor)
-aegisub.register_macro(unify_background_lines_script_name, tr "Unify Background Lines", UnifyBackgroundLines)
-aegisub.register_macro(add_code_to_selected_lines_script_name, tr "Add Code To Selected Lines", AddCodeToSelectedLines)
-aegisub.register_macro(remove_line_break_script_name, tr "Remove line Breaks", RemoveLineBreaks)
-aegisub.register_macro(import_text_to_selected_lines, tr "Import text to selected lines", ImportTextToSelectedLines)
-aegisub.register_macro(select_playing_line, tr "Select playing line", SelectPlayingLine)
-aegisub.register_macro(make_next_line_continuous, tr "Make next line continuous", MakeNextLineContinuous)
+aegisub.register_macro(convert_numbers_to_english, tr "Convert Numbers to English", ConvertNumbersToEnglish)
+aegisub.register_macro(convert_numbers_to_arabic, tr "Convert Numbers to Arabic", ConvertNumbersToArabic)
+aegisub.register_macro(convert_numbers_to_persian, tr "Convert Numbers to Persian", ConvertNumbersToPersian)
+
+------------ Text Movements -------------
 aegisub.register_macro(shift_start_line_forward, tr "Shift start line forward", ShiftStartLineForward)
 aegisub.register_macro(shift_start_line_backward, tr "Shift start line backward", ShiftStartLineBackward)
 aegisub.register_macro(shift_end_line_forward, tr "Shift end line forward", ShiftEndLineForward)
@@ -1644,14 +1652,24 @@ aegisub.register_macro(move_last_text_part, tr "Move last text part", MoveLastTe
 aegisub.register_macro(move_first_part_of_next, tr "Move first part of next", MoveFirstPartOfNext)
 aegisub.register_macro(move_last_word, tr "Move last word", MoveLastWord)
 aegisub.register_macro(move_first_word_of_next, tr "Move first word of next", MoveFirstWordOfNext)
+
+aegisub.register_macro(split_script_name, tr "Split selected lines", Split)
+aegisub.register_macro(split_at_index_script_name, tr "Split selected line at index", SplitAtIndex)
+aegisub.register_macro(show_rtl_editor_script_name, tr "Show Rtl editor", ShowRtlEditor)
+aegisub.register_macro(make_next_line_continuous, tr "Make next line continuous", MakeNextLineContinuous)
+aegisub.register_macro(remove_line_break_script_name, tr "Remove line Breaks", RemoveLineBreaks)
 aegisub.register_macro(remove_position_tags, tr "Remove Position tags", RemovePositionTags)
-aegisub.register_macro(display_sum_of_times, tr "Display sum of times", DisplaySumOfTimes)
+aegisub.register_macro(select_playing_line, tr "Select playing line", SelectPlayingLine)
 aegisub.register_macro(generate_srt_like_text, tr "Generate SRT like text", GenerateSrtLikeText)
-aegisub.register_macro(remove_background_lines, tr "Remove all Background lines", RemoveBackgroundLines)
-aegisub.register_macro(convert_numbers_to_english, tr "Convert Numbers to English", ConvertNumbersToEnglish)
-aegisub.register_macro(convert_numbers_to_arabic, tr "Convert Numbers to Arabic", ConvertNumbersToArabic)
-aegisub.register_macro(convert_numbers_to_persian, tr "Convert Numbers to Persian", ConvertNumbersToPersian)
+
+------------ Special Tags ------------
 aegisub.register_macro(fix_line_position, tr "Fix line Position", FixLinePosition)
 aegisub.register_macro(set_line_as_no_background, tr "Set line as No Background", SetLineAsNoBackground)
 aegisub.register_macro(set_line_as_dont_correct_rtl, tr "Set line as Don't Correct RTL", SetLineAsDontCorrectRtl)
 aegisub.register_macro(set_line_as_dont_remove, tr "Set line as Don't Remove", SetLineAsDontRemove)
+
+------------ Miscs ------------
+aegisub.register_macro(unify_background_lines_script_name, tr "Unify Background Lines", UnifyBackgroundLines)
+aegisub.register_macro(add_code_to_selected_lines_script_name, tr "Add Code To Selected Lines", AddCodeToSelectedLines)
+aegisub.register_macro(import_text_to_selected_lines, tr "Import text to selected lines", ImportTextToSelectedLines)
+aegisub.register_macro(display_sum_of_times, tr "Display sum of times", DisplaySumOfTimes)
