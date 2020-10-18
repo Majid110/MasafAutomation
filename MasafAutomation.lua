@@ -39,7 +39,7 @@ set_line_as_dont_remove = tr "Masaf/Set line as Don't Remove"
 
 script_description = tr "Some Aegisub automation scripts specially designed for Right-To-Left language subtitles"
 script_author = "Majid Shamkhani"
-script_version = "1.19.0"
+script_version = "1.19.1"
 
 -- <<<<<<<<<<<<<<<<<<<<<<<<< Main Methods >>>>>>>>>>>>>>>>>>>>>>>>>
 
@@ -84,8 +84,12 @@ function AddBackground(subs)
 
 	local positionTag = getPositionTag(bgShape.text)
 
-	local secondForContinuousBackground =
+	local secondForContinuousBackground, dialogOk =
 		getNumberFromUser("\r\n Enter maximum second to make background continious: \r\n", 1)
+
+	if not dialogOk then
+		return
+	end
 
 	local lastLineStyle = nil
 	while i < n do
@@ -212,9 +216,10 @@ function SplitAtIndex(subs, selected)
 
 	line2 = table.copy(line)
 
-	local idx = getNumberFromUser("\r\n Enter index of character that you want to split line on that character: \r\n", 2)
+	local idx, dialogOk =
+		getNumberFromUser("\r\n Enter index of character that you want to split line on that character: \r\n", 2)
 
-	if idx == 0 then
+	if not dialogOk then
 		return
 	end
 
@@ -1097,9 +1102,9 @@ function getNumberFromUser(msg, defaultValue)
 	btn, result = aegisub.dialog.display(config, {"OK", "Cancel"}, {ok = "OK", cancel = "Cancel"})
 	if btn then
 		local r = tonumber(result.inputNumber)
-		return r
+		return r, true
 	end
-	return 0
+	return 0, false
 end
 
 function getCharAtIndex(text, index)
