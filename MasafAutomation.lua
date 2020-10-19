@@ -50,7 +50,7 @@ display_sum_of_times = tr "Masaf/Misc/Display sum of times"
 
 script_description = tr "Some Aegisub automation scripts specially designed for Right-To-Left language subtitles"
 script_author = "Majid Shamkhani"
-script_version = "1.20.0"
+script_version = "1.20.1"
 
 -- <<<<<<<<<<<<<<<<<<<<<<<<< Main Methods >>>>>>>>>>>>>>>>>>>>>>>>>
 
@@ -337,7 +337,9 @@ function ShowRtlEditor(subs, selected)
 	end
 	-- Replace line break with \N
 	newText = utf8.gsub(newText, "\n", "\\N")
-	newText = rtlCorrectNonCodeText(newText)
+	if canCorrectRtl(codeText) then
+		newText = rtlCorrectNonCodeText(newText)
+	end
 	line.text = codeText .. newText
 	subs[selected[1]] = line
 
