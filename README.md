@@ -37,6 +37,8 @@ Some Aegisub automation scripts specially designed for Right-To-Left language su
 - Set line as No Background
 - Set line as Don't Correct RTL
 - Set line as Don't Remove
+- Shift Linebreak
+- Shift Linebreak Back
 
 ## Screenshots:
 

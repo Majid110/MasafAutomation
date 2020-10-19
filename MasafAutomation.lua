@@ -24,6 +24,8 @@ move_last_text_part = tr "Masaf/Text Movement/Move last text part"
 move_first_part_of_next = tr "Masaf/Text Movement/Move first part of next"
 move_last_word = tr "Masaf/Text Movement/Move last word"
 move_first_word_of_next = tr "Masaf/Text Movement/Move first word of next"
+shift_line_break = tr "Masaf/Text Movement/Shift Linebreak"
+shift_line_break_back = tr "Masaf/Text Movement/Shift Linebreak Back"
 
 split_script_name = tr "Masaf/Split line"
 split_at_index_script_name = tr "Masaf/Split line at Index"
@@ -48,7 +50,7 @@ display_sum_of_times = tr "Masaf/Misc/Display sum of times"
 
 script_description = tr "Some Aegisub automation scripts specially designed for Right-To-Left language subtitles"
 script_author = "Majid Shamkhani"
-script_version = "1.19.2"
+script_version = "1.20.0"
 
 -- <<<<<<<<<<<<<<<<<<<<<<<<< Main Methods >>>>>>>>>>>>>>>>>>>>>>>>>
 
@@ -827,6 +829,52 @@ function SetLineAsDontRemove(subs, selected)
 	addTag(subs, selected, Drl)
 	aegisub.set_undo_point(set_line_as_dont_remove)
 end
+
+function ShiftLineBreak(subs, selected)
+	if #selected > 1 then
+		return
+	end
+
+	local line = subs[selected[1]]
+	local s = line.text
+	s = utf8.gsub(s, "\\N", " \\N ")
+	s = string.gsub(trim(s), "%s%s", " ")
+	local parts = s:split(" ")
+	local i = getFirstLineBreakIndex(parts)
+	if i == 0 or i == #parts then
+		return text
+	end
+
+	parts[i] = parts[i + 1]
+	parts[i + 1] = "\\N"
+
+	line.text = table.concat(parts, " ")
+	subs[selected[1]] = line
+	aegisub.set_undo_point(shift_line_break)
+end
+
+function ShiftLineBreakBack(subs, selected)
+	if #selected > 1 then
+		return
+	end
+
+	local line = subs[selected[1]]
+	local s = line.text
+	s = utf8.gsub(s, "\\N", " \\N ")
+	s = string.gsub(trim(s), "%s%s", " ")
+	local parts = s:split(" ")
+	local i = getFirstLineBreakIndex(parts)
+	if i == 0 or i == 1 then
+		return text
+	end
+
+	parts[i] = parts[i - 1]
+	parts[i - 1] = "\\N"
+
+	line.text = table.concat(parts, " ")
+	subs[selected[1]] = line
+	aegisub.set_undo_point(shift_line_break_back)
+end
 ------------------------- End of Main Methods -------------------
 
 -- <<<<<<<<<<<<<<<<<<<<< Related Methods >>>>>>>>>>>>>>>>>>>>>>>>
@@ -1441,6 +1489,14 @@ function getFirstWord(text)
 	return words[1]
 end
 
+function getFirstLineBreakIndex(parts)
+	for i, t in ipairs(parts) do
+		if utf8.find(t, "\\N") then
+			return i
+		end
+	end
+	return 0
+end
 ------------------ Number Converter Methods -------------------
 function applyNumbersToEnglish(text)
 	-- Persian numbers to English
@@ -1652,6 +1708,8 @@ aegisub.register_macro(move_last_text_part, tr "Move last text part", MoveLastTe
 aegisub.register_macro(move_first_part_of_next, tr "Move first part of next", MoveFirstPartOfNext)
 aegisub.register_macro(move_last_word, tr "Move last word", MoveLastWord)
 aegisub.register_macro(move_first_word_of_next, tr "Move first word of next", MoveFirstWordOfNext)
+aegisub.register_macro(shift_line_break, tr "Shift Linebreak", ShiftLineBreak)
+aegisub.register_macro(shift_line_break_back, tr "Shift Linebreak Back", ShiftLineBreakBack)
 
 aegisub.register_macro(split_script_name, tr "Split selected lines", Split)
 aegisub.register_macro(split_at_index_script_name, tr "Split selected line at index", SplitAtIndex)
