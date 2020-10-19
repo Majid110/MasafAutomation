@@ -177,9 +177,9 @@ function Split(subs, selected)
 	local line2 = table.copy(line)
 
 	-- Finding manual splittnig symbol -> ||
-	s, e = utf8.find(text, SplitChars[1])
-	if s then
-		line.text = utf8.sub(text, 1, s - 1)
+	text, e = utf8.find(text, SplitChars[1])
+	if text then
+		line.text = utf8.sub(text, 1, text - 1)
 		line2.text = utf8.sub(text, e + 1, utf8.len(text))
 		line.text = rtlCorrectNonCodeText(trim(line.text))
 		line2.text = rtlCorrectNonCodeText(trim(line2.text))
@@ -191,11 +191,11 @@ function Split(subs, selected)
 
 	textParts = getSubtitleTextParts(text)
 
-	s, e, idx = getFirstChar(text, textParts)
+	text, e, idx = getFirstChar(text, textParts)
 	if idx > 0 then
 		-- Remove split char from end of text
 		if idx <= 2 then
-			line.text = utf8.sub(text, 1, s - 1)
+			line.text = utf8.sub(text, 1, text - 1)
 			line2.text = utf8.sub(text, e + 1, utf8.len(text))
 		else
 			line.text = utf8.sub(text, 1, e)
@@ -836,10 +836,14 @@ function ShiftLineBreak(subs, selected)
 	end
 
 	local line = subs[selected[1]]
-	local s = line.text
-	s = utf8.gsub(s, "\\N", " \\N ")
-	s = string.gsub(trim(s), "%s%s", " ")
-	local parts = s:split(" ")
+
+	local text, code = removeRtlChars(line.text), ""
+	local textParts = getSubtitleTextParts(text)
+	code, text = getCodeAndPlainTextPart(text, textParts)
+
+	text = utf8.gsub(text, "\\N", " \\N ")
+	text = string.gsub(trim(text), "%s%s", " ")
+	local parts = text:split(" ")
 	local i = getFirstLineBreakIndex(parts)
 	if i == 0 or i == #parts then
 		return text
@@ -848,7 +852,9 @@ function ShiftLineBreak(subs, selected)
 	parts[i] = parts[i + 1]
 	parts[i + 1] = "\\N"
 
-	line.text = table.concat(parts, " ")
+	text = table.concat(parts, " ")
+	text = rtlCorrectNonCodeText(text)
+	line.text = code .. text
 	subs[selected[1]] = line
 	aegisub.set_undo_point(shift_line_break)
 end
@@ -859,10 +865,14 @@ function ShiftLineBreakBack(subs, selected)
 	end
 
 	local line = subs[selected[1]]
-	local s = line.text
-	s = utf8.gsub(s, "\\N", " \\N ")
-	s = string.gsub(trim(s), "%s%s", " ")
-	local parts = s:split(" ")
+
+	local text, code = removeRtlChars(line.text), ""
+	local textParts = getSubtitleTextParts(text)
+	code, text = getCodeAndPlainTextPart(text, textParts)
+
+	text = utf8.gsub(text, "\\N", " \\N ")
+	text = string.gsub(trim(text), "%s%s", " ")
+	local parts = text:split(" ")
 	local i = getFirstLineBreakIndex(parts)
 	if i == 0 or i == 1 then
 		return text
@@ -871,7 +881,9 @@ function ShiftLineBreakBack(subs, selected)
 	parts[i] = parts[i - 1]
 	parts[i - 1] = "\\N"
 
-	line.text = table.concat(parts, " ")
+	text = table.concat(parts, " ")
+	text = rtlCorrectNonCodeText(text)
+	line.text = code .. text
 	subs[selected[1]] = line
 	aegisub.set_undo_point(shift_line_break_back)
 end
