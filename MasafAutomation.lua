@@ -2,6 +2,7 @@
 
 local tr = aegisub.gettext
 local utf8 = require "utf8"
+local re = require "aegisub.re"
 --local inspect = require "inspect"
 
 add_background_script_name = tr "Masaf/Add Backgrounds"
@@ -29,6 +30,7 @@ shift_line_break_back = tr "Masaf/Text Movement/Shift Linebreak Back"
 
 split_script_name = tr "Masaf/Split line"
 split_at_index_script_name = tr "Masaf/Split line at Index"
+break_semi_long_lines = tr "Masaf/Break Semi Long lines"
 show_rtl_editor_script_name = tr "Masaf/Show Rtl Editor"
 make_next_line_continuous = tr "Masaf/Make next line continuous"
 remove_line_break_script_name = tr "Masaf/Remove line Breaks"
@@ -50,13 +52,14 @@ display_sum_of_times = tr "Masaf/Misc/Display sum of times"
 
 script_description = tr "Some Aegisub automation scripts specially designed for Right-To-Left language subtitles"
 script_author = "Majid Shamkhani"
-script_version = "1.20.1"
+script_version = "1.21.0"
 
 -- <<<<<<<<<<<<<<<<<<<<<<<<< Main Methods >>>>>>>>>>>>>>>>>>>>>>>>>
 
 -- ------------------------- AddBackground ---------------------
 
-BgPattern = [[{\p1\pos%(.-%)}m %d+ %d+ l %d+ %d+ l %d+ %d+ l %d+ %d+ l %d+ %d+]]
+BgPatternRegex =
+	[[\{\\p1\\pos\(.*?\)\}m (\d+(\.\d+)?) (\d+(\.\d+)?) l (\d+(\.\d+)?) (\d+(\.\d+)?) l (\d+(\.\d+)?) (\d+(\.\d+)?) l (\d+(\.\d+)?) (\d+(\.\d+)?) l (\d+(\.\d+)?) (\d+(\.\d+)?)]]
 PosPattern = "^{\\pos%(.-%)}"
 BgPosPattern = "^{\\p1\\pos%(.-%)}"
 SplitChars = {"||", "\\N", "%.", ",", "،", ";", "%?", "؟", "!", ":", "؛", "۔"}
@@ -177,9 +180,9 @@ function Split(subs, selected)
 	local line2 = table.copy(line)
 
 	-- Finding manual splittnig symbol -> ||
-	text, e = utf8.find(text, SplitChars[1])
-	if text then
-		line.text = utf8.sub(text, 1, text - 1)
+	s, e = utf8.find(text, SplitChars[1])
+	if s then
+		line.text = utf8.sub(text, 1, s - 1)
 		line2.text = utf8.sub(text, e + 1, utf8.len(text))
 		line.text = rtlCorrectNonCodeText(trim(line.text))
 		line2.text = rtlCorrectNonCodeText(trim(line2.text))
@@ -191,11 +194,11 @@ function Split(subs, selected)
 
 	textParts = getSubtitleTextParts(text)
 
-	text, e, idx = getFirstChar(text, textParts)
+	s, e, idx = getFirstChar(text, textParts)
 	if idx > 0 then
 		-- Remove split char from end of text
 		if idx <= 2 then
-			line.text = utf8.sub(text, 1, text - 1)
+			line.text = utf8.sub(text, 1, s - 1)
 			line2.text = utf8.sub(text, e + 1, utf8.len(text))
 		else
 			line.text = utf8.sub(text, 1, e)
@@ -254,10 +257,31 @@ function SplitAtIndex(subs, selected)
 	return selected
 end
 
+function BreakSemiLongLines(subs)
+	local i, n = 0, #subs
+	local meta, styles = karaskel.collect_head(subs)
+	local videoWidth = getVideoWidth()
+	n = subs.n
+	while i < n do
+		i = i + 1
+		local l = subs[i]
+		if l.class == "dialogue" and l.effect == "" and not l.comment and notBreakedText(l.text) and not isBackgroundLine(l) then
+			local textWidth = getTextWidth(l, styles)
+			local breakToleranse = (videoWidth / 5) * 4
+			if textWidth >= breakToleranse then
+				l.text = autoBreakLine(l.text)
+				subs[i] = l
+			end
+		end
+	end
+	aegisub.set_undo_point(break_semi_long_lines)
+end
+
 --------------------------- RtlCorrection ---------------------
 
 local SpecialChars = [[%.,،%?؟«»!%-:]]
 local PunctuationMarks = [[%.,،%?؟:؛!;۔]]
+local PunctuationMarksRegex = "[\\.,،\\?؟:؛!;۔]+"
 local StartingBracketChars = [[%({%[<«“]]
 local EndingsBracketChars = [[%)}%]>»”]]
 local CodePattern = "({.-})"
@@ -413,7 +437,7 @@ function ImportTextToSelectedLines(subs, selected)
 	if not result then
 		return
 	end
-	local texts = text:split("\n")
+	local texts = re.split(text, "\n")
 	for i = 1, #selected, 1 do
 		if i > table.getn(texts) then
 			return
@@ -844,8 +868,8 @@ function ShiftLineBreak(subs, selected)
 	code, text = getCodeAndPlainTextPart(text, textParts)
 
 	text = utf8.gsub(text, "\\N", " \\N ")
-	text = string.gsub(trim(text), "%s%s", " ")
-	local parts = text:split(" ")
+	text = removeDoubleSpace(trim(text))
+	local parts = getWordList(text)
 	local i = getFirstLineBreakIndex(parts)
 	if i == 0 or i == #parts then
 		return text
@@ -873,8 +897,8 @@ function ShiftLineBreakBack(subs, selected)
 	code, text = getCodeAndPlainTextPart(text, textParts)
 
 	text = utf8.gsub(text, "\\N", " \\N ")
-	text = string.gsub(trim(text), "%s%s", " ")
-	local parts = text:split(" ")
+	text = removeDoubleSpace(trim(text))
+	local parts = getWordList(text)
 	local i = getFirstLineBreakIndex(parts)
 	if i == 0 or i == 1 then
 		return text
@@ -908,7 +932,7 @@ function calcLineCount(line, styles)
 	local lineCount = 0
 	if text:match([[\N]]) ~= nil then
 		local l = table.copy(line)
-		local lineParts = text:split([[\N]])
+		local lineParts = re.split(text, "\\\\N+")
 		for i, t in ipairs(lineParts) do
 			l.text = t
 			lineCount = lineCount + getNoneBreakedLineCount(l, videoWidth, styles)
@@ -952,7 +976,7 @@ function getBackgroundLine(subs, styles)
 	--aegisub.debug.out(subs[1].text)
 	local firstLine, i = getFirstSubtitleLine(subs)
 
-	if firstLine == nil or string.match(firstLine.text, BgPattern) == nil then
+	if firstLine == nil or not isBackgroundLine(firstLine) then
 		createBackgroundStyle(subs, styles)
 		createBackgroundLine(subs, firstLine, i)
 		showMessage(
@@ -1058,7 +1082,7 @@ function createBackgroundLine(subs, line, idx)
 end
 
 function isBackgroundLine(line)
-	return string.match(line.text, BgPattern) ~= nil
+	return re.match(line.text, BgPatternRegex) ~= nil
 end
 
 function videoLoaded()
@@ -1210,6 +1234,53 @@ function getTextFromUser()
 	return nil
 end
 
+function autoBreakLine(lineText)
+	local text, code = removeRtlChars(lineText), ""
+	text = removeDoubleSpace(text)
+	local textParts = getSubtitleTextParts(text)
+	code, text = getCodeAndPlainTextPart(text, textParts)
+
+	local wordList = getWordList(trim(text))
+	local breakIndex = getCloserPunctuationMarkIndex(wordList)
+	-- if there is no punctuationMarks near the break tolerance
+	if breakIndex == 0 then
+		-- break from middle of text
+		breakIndex = math.floor(#wordList / 2)
+	end
+
+	wordList[breakIndex] = wordList[breakIndex] .. " \\N "
+	text = table.concat(wordList, " ")
+	text = rtlCorrectNonCodeText(text)
+	return code .. text
+end
+
+function getCloserPunctuationMarkIndex(wordList)
+	local tolerance = calcBreakTolerance(#wordList)
+	local breakIndex = 0
+	local closerIndex = tolerance
+
+	for i, t in ipairs(wordList) do
+		if re.match(t, PunctuationMarksRegex) ~= nil then
+			local idx = math.abs(math.floor(#wordList / 2) - i)
+			if idx <= tolerance and idx < closerIndex then
+				idx = closerIndex
+				breakIndex = i
+			end
+		end
+	end
+	return breakIndex
+end
+
+function calcBreakTolerance(wordCount)
+	local percent = 60
+	local x = math.floor((wordCount * percent) / 100)
+	local tolerance = math.ceil(x / 2)
+	return math.floor(wordCount / 2) - tolerance
+end
+
+function notBreakedText(text)
+	return re.match(text, "\\\\N+") == nil
+end
 ----------------------- Rtl Correction Methods ---------------------
 
 function removeRtlChars(s)
@@ -1600,21 +1671,6 @@ function applyNumbersToPersian(text)
 end
 
 ------------------ Shared Methods -------------------
-function string:split(inSplitPattern, outResults)
-	if not outResults then
-		outResults = {}
-	end
-	local theStart = 1
-	local theSplitStart, theSplitEnd = string.find(self, inSplitPattern, theStart)
-	while theSplitStart do
-		table.insert(outResults, string.sub(self, theStart, theSplitStart - 1))
-		theStart = theSplitEnd + 1
-		theSplitStart, theSplitEnd = string.find(self, inSplitPattern, theStart)
-	end
-	table.insert(outResults, string.sub(self, theStart))
-	return outResults
-end
-
 function cleanTags(text)
 	return string.gsub(text, [[{\.-}]], "")
 end
@@ -1696,6 +1752,10 @@ function getCodeAndPlainTextPart(text, textParts)
 	return codeText, plainText
 end
 
+function getWordList(text)
+	return re.split(text, " ")
+end
+
 ------------------------------ End of methods ------------------------------
 
 aegisub.register_macro(add_background_script_name, tr "Adds background before every line", AddBackground)
@@ -1727,6 +1787,7 @@ aegisub.register_macro(shift_line_break_back, tr "Shift Linebreak Back", ShiftLi
 
 aegisub.register_macro(split_script_name, tr "Split selected lines", Split)
 aegisub.register_macro(split_at_index_script_name, tr "Split selected line at index", SplitAtIndex)
+aegisub.register_macro(break_semi_long_lines, tr "Break Semi Long lines", BreakSemiLongLines)
 aegisub.register_macro(show_rtl_editor_script_name, tr "Show Rtl editor", ShowRtlEditor)
 aegisub.register_macro(make_next_line_continuous, tr "Make next line continuous", MakeNextLineContinuous)
 aegisub.register_macro(remove_line_break_script_name, tr "Remove line Breaks", RemoveLineBreaks)

@@ -39,6 +39,7 @@ Some Aegisub automation scripts specially designed for Right-To-Left language su
 - Set line as Don't Remove
 - Shift Linebreak
 - Shift Linebreak Back
+- Break Semi Long lines
 
 ## Screenshots:
 
