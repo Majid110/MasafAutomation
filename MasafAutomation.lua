@@ -267,7 +267,7 @@ function BreakSemiLongLines(subs)
 		local l = subs[i]
 		if l.class == "dialogue" and l.effect == "" and not l.comment and notBreakedText(l.text) and not isBackgroundLine(l) then
 			local textWidth = getTextWidth(l, styles)
-			local breakToleranse = (videoWidth / 5) * 4
+			local breakToleranse = (videoWidth / 5) * 3
 			if textWidth >= breakToleranse then
 				l.text = autoBreakLine(l.text)
 				subs[i] = l
