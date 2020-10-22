@@ -285,15 +285,11 @@ function BreakSelectedLine(subs, selected)
 
 	local l = subs[selected[1]]
 	local meta, styles = karaskel.collect_head(subs)
-	local videoWidth = getVideoWidth()
 
 	if l.class == "dialogue" and l.effect == "" and not l.comment and notBreakedText(l.text) and not isBackgroundLine(l) then
 		local textWidth = getTextWidth(l, styles)
-		local breakToleranse = (videoWidth / 5) * 3
-		if textWidth >= breakToleranse then
-			l.text = autoBreakLine(l.text)
-			subs[selected[1]] = l
-		end
+		l.text = autoBreakLine(l.text)
+		subs[selected[1]] = l
 	end
 	aegisub.set_undo_point(break_selected_line)
 end
