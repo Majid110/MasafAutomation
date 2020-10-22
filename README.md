@@ -40,6 +40,7 @@ Some Aegisub automation scripts specially designed for Right-To-Left language su
 - Shift Linebreak
 - Shift Linebreak Back
 - Break Semi Long lines
+- Break Selected line
 
 ## Screenshots:
 

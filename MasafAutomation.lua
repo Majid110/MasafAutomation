@@ -31,6 +31,7 @@ shift_line_break_back = tr "Masaf/Text Movement/Shift Linebreak Back"
 split_script_name = tr "Masaf/Split line"
 split_at_index_script_name = tr "Masaf/Split line at Index"
 break_semi_long_lines = tr "Masaf/Break Semi Long lines"
+break_selected_line = tr "Masaf/Break Selected line"
 show_rtl_editor_script_name = tr "Masaf/Show Rtl Editor"
 make_next_line_continuous = tr "Masaf/Make next line continuous"
 remove_line_break_script_name = tr "Masaf/Remove line Breaks"
@@ -52,7 +53,7 @@ display_sum_of_times = tr "Masaf/Misc/Display sum of times"
 
 script_description = tr "Some Aegisub automation scripts specially designed for Right-To-Left language subtitles"
 script_author = "Majid Shamkhani"
-script_version = "1.21.1"
+script_version = "1.22.0"
 
 -- <<<<<<<<<<<<<<<<<<<<<<<<< Main Methods >>>>>>>>>>>>>>>>>>>>>>>>>
 
@@ -275,6 +276,26 @@ function BreakSemiLongLines(subs)
 		end
 	end
 	aegisub.set_undo_point(break_semi_long_lines)
+end
+
+function BreakSelectedLine(subs, selected)
+	if #selected > 1 then
+		return
+	end
+
+	local l = subs[selected[1]]
+	local meta, styles = karaskel.collect_head(subs)
+	local videoWidth = getVideoWidth()
+
+	if l.class == "dialogue" and l.effect == "" and not l.comment and notBreakedText(l.text) and not isBackgroundLine(l) then
+		local textWidth = getTextWidth(l, styles)
+		local breakToleranse = (videoWidth / 5) * 3
+		if textWidth >= breakToleranse then
+			l.text = autoBreakLine(l.text)
+			subs[selected[1]] = l
+		end
+	end
+	aegisub.set_undo_point(break_selected_line)
 end
 
 --------------------------- RtlCorrection ---------------------
@@ -1788,6 +1809,7 @@ aegisub.register_macro(shift_line_break_back, tr "Shift Linebreak Back", ShiftLi
 aegisub.register_macro(split_script_name, tr "Split selected lines", Split)
 aegisub.register_macro(split_at_index_script_name, tr "Split selected line at index", SplitAtIndex)
 aegisub.register_macro(break_semi_long_lines, tr "Break Semi Long lines", BreakSemiLongLines)
+aegisub.register_macro(break_selected_line, tr "Break Selected line", BreakSelectedLine)
 aegisub.register_macro(show_rtl_editor_script_name, tr "Show Rtl editor", ShowRtlEditor)
 aegisub.register_macro(make_next_line_continuous, tr "Make next line continuous", MakeNextLineContinuous)
 aegisub.register_macro(remove_line_break_script_name, tr "Remove line Breaks", RemoveLineBreaks)
