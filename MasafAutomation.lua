@@ -53,7 +53,7 @@ display_sum_of_times = tr "Masaf/Misc/Display sum of times"
 
 script_description = tr "Some Aegisub automation scripts specially designed for Right-To-Left language subtitles"
 script_author = "Majid Shamkhani"
-script_version = "1.22.0"
+script_version = "1.22.1"
 
 -- <<<<<<<<<<<<<<<<<<<<<<<<< Main Methods >>>>>>>>>>>>>>>>>>>>>>>>>
 
@@ -1267,7 +1267,9 @@ function autoBreakLine(lineText)
 
 	wordList[breakIndex] = wordList[breakIndex] .. " \\N "
 	text = table.concat(wordList, " ")
-	text = rtlCorrectNonCodeText(text)
+	if canCorrectRtl(code) then
+		text = rtlCorrectNonCodeText(text)
+	end
 	return code .. text
 end
 
