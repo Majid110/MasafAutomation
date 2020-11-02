@@ -53,7 +53,7 @@ display_sum_of_times = tr "Masaf/Misc/Display sum of times"
 
 script_description = tr "Some Aegisub automation scripts specially designed for Right-To-Left language subtitles"
 script_author = "Majid Shamkhani"
-script_version = "1.22.1"
+script_version = "1.22.2"
 
 -- <<<<<<<<<<<<<<<<<<<<<<<<< Main Methods >>>>>>>>>>>>>>>>>>>>>>>>>
 
@@ -896,7 +896,9 @@ function ShiftLineBreak(subs, selected)
 	parts[i + 1] = "\\N"
 
 	text = table.concat(parts, " ")
-	text = rtlCorrectNonCodeText(text)
+	if canCorrectRtl(code) then
+		text = rtlCorrectNonCodeText(text)
+	end
 	line.text = code .. text
 	subs[selected[1]] = line
 	aegisub.set_undo_point(shift_line_break)
@@ -925,7 +927,9 @@ function ShiftLineBreakBack(subs, selected)
 	parts[i - 1] = "\\N"
 
 	text = table.concat(parts, " ")
-	text = rtlCorrectNonCodeText(text)
+	if canCorrectRtl(code) then
+		text = rtlCorrectNonCodeText(text)
+	end
 	line.text = code .. text
 	subs[selected[1]] = line
 	aegisub.set_undo_point(shift_line_break_back)
