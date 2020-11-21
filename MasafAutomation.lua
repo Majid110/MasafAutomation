@@ -53,7 +53,7 @@ display_sum_of_times = tr "Masaf/Misc/Display sum of times"
 
 script_description = tr "Some Aegisub automation scripts specially designed for Right-To-Left language subtitles"
 script_author = "Majid Shamkhani"
-script_version = "1.22.2"
+script_version = "1.22.3"
 
 -- <<<<<<<<<<<<<<<<<<<<<<<<< Main Methods >>>>>>>>>>>>>>>>>>>>>>>>>
 
@@ -667,7 +667,7 @@ function MoveLastWord(subs, selected)
 
 	local nextText, nextCode = removeRtlChars(nextLine.text), ""
 	local textParts = getSubtitleTextParts(nextText)
-	nextCode, nextText = getCodeAndPlainTextPart(text, textParts)
+	nextCode, nextText = getCodeAndPlainTextPart(nextText, textParts)
 
 	nextText = nextCode .. lastWord .. " " .. nextText
 	line.text = rtlCorrectIfAllowed(trim(line.text))
