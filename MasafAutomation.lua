@@ -16,11 +16,14 @@ convert_numbers_to_english = tr "Masaf/Correction/Convert Numbers to English"
 convert_numbers_to_arabic = tr "Masaf/Correction/Convert Numbers to Arabic"
 convert_numbers_to_persian = tr "Masaf/Correction/Convert Numbers to Persian"
 
+------------ Timing -------------
+shift_start_line_forward = tr "Masaf/Timing/Shift start line forward"
+shift_start_line_backward = tr "Masaf/Timing/Shift start line backward"
+shift_end_line_forward = tr "Masaf/Timing/Shift end line forward"
+shift_end_line_backward = tr "Masaf/Timing/Shift end line backward"
+make_next_line_continuous = tr "Masaf/Timing/Make next line continuous"
+
 ------------ Text Movements -------------
-shift_start_line_forward = tr "Masaf/Text Movement/Shift start line forward"
-shift_start_line_backward = tr "Masaf/Text Movement/Shift start line backward"
-shift_end_line_forward = tr "Masaf/Text Movement/Shift end line forward"
-shift_end_line_backward = tr "Masaf/Text Movement/Shift end line backward"
 move_last_text_part = tr "Masaf/Text Movement/Move last text part"
 move_first_part_of_next = tr "Masaf/Text Movement/Move first part of next"
 move_last_word = tr "Masaf/Text Movement/Move last word"
@@ -33,7 +36,6 @@ split_at_index_script_name = tr "Masaf/Split line at Index"
 break_semi_long_lines = tr "Masaf/Break Semi Long lines"
 break_selected_line = tr "Masaf/Break Selected line"
 show_rtl_editor_script_name = tr "Masaf/Show Rtl Editor"
-make_next_line_continuous = tr "Masaf/Make next line continuous"
 remove_line_break_script_name = tr "Masaf/Remove line Breaks"
 remove_position_tags = tr "Masaf/Remove Position tags"
 select_playing_line = tr "Masaf/Select playing line"
@@ -1796,11 +1798,14 @@ aegisub.register_macro(convert_numbers_to_english, tr "Convert Numbers to Englis
 aegisub.register_macro(convert_numbers_to_arabic, tr "Convert Numbers to Arabic", ConvertNumbersToArabic)
 aegisub.register_macro(convert_numbers_to_persian, tr "Convert Numbers to Persian", ConvertNumbersToPersian)
 
------------- Text Movements -------------
+------------ Timing -------------
 aegisub.register_macro(shift_start_line_forward, tr "Shift start line forward", ShiftStartLineForward)
 aegisub.register_macro(shift_start_line_backward, tr "Shift start line backward", ShiftStartLineBackward)
 aegisub.register_macro(shift_end_line_forward, tr "Shift end line forward", ShiftEndLineForward)
 aegisub.register_macro(shift_end_line_backward, tr "Shift end line backward", ShiftEndLineBackward)
+aegisub.register_macro(make_next_line_continuous, tr "Make next line continuous", MakeNextLineContinuous)
+
+------------ Text Movements -------------
 aegisub.register_macro(move_last_text_part, tr "Move last text part", MoveLastTextPart)
 aegisub.register_macro(move_first_part_of_next, tr "Move first part of next", MoveFirstPartOfNext)
 aegisub.register_macro(move_last_word, tr "Move last word", MoveLastWord)
@@ -1813,7 +1818,6 @@ aegisub.register_macro(split_at_index_script_name, tr "Split selected line at in
 aegisub.register_macro(break_semi_long_lines, tr "Break Semi Long lines", BreakSemiLongLines)
 aegisub.register_macro(break_selected_line, tr "Break Selected line", BreakSelectedLine)
 aegisub.register_macro(show_rtl_editor_script_name, tr "Show Rtl editor", ShowRtlEditor)
-aegisub.register_macro(make_next_line_continuous, tr "Make next line continuous", MakeNextLineContinuous)
 aegisub.register_macro(remove_line_break_script_name, tr "Remove line Breaks", RemoveLineBreaks)
 aegisub.register_macro(remove_position_tags, tr "Remove Position tags", RemovePositionTags)
 aegisub.register_macro(select_playing_line, tr "Select playing line", SelectPlayingLine)
