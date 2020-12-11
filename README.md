@@ -7,44 +7,52 @@ Some Aegisub automation scripts specially designed for Right-To-Left language su
 ## Scripts:
 
 - Add Backgrounds
-- Split line
-- Split line at Index
+- Remove all Background lines
 - Rtl Correction - All lines
 - Rtl Correction - Selected
+- Add RLE - Selected lines
 - Undo Rtl Correction - Selected
-- Show Rtl Editor
-- Unify Background lines
-- Add Code to Selected lines
-- Remove line Breaks
-- Import text to selected Lines
-- Select playing line
-- Make next line continuous
+- Numbers to English
+- Numbers to Arabic
+- Numbers to Persian
+- Selected Numbers to English
+- Selected Numbers to Arabic
+- Selected Numbers to Persian
 - Shift start line forward
 - Shift start line backward
 - Shift end line forward
 - Shift end line backward
+- Make next line continuous
+- Make Same time
+- Make Same Start time
+- Make Same End time
 - Move last text part
 - Move first part of next
 - Move last word
 - Move first word of next
+- Shift Linebreak
+- Shift Linebreak Back
+- Split line
+- Split line at Index
+- Break Semi Long lines
+- Break Selected line
+- Show Rtl Editor
+- Remove line Breaks
 - Remove Position tags
-- Generate SRT like text
-- Remove Background lines
-- Convert Numbers to English
-- Convert Numbers to Arabic
-- Convert Numbers to Persian
+- Select playing line
 - Fix line Position
 - Set line as No Background
 - Set line as Don't Correct RTL
 - Set line as Don't Remove
-- Shift Linebreak
-- Shift Linebreak Back
-- Break Semi Long lines
-- Break Selected line
+- Generate SRT like text
+- Unify Background lines
+- Add Code to Selected lines
+- Import text to selected Lines
+- Display sum of times
 
 ## Screenshots:
 
-Teransparent background for subtitle
+Transparent background for subtitle
 
 ![Add Background](img/AddBackground.jpg)
 

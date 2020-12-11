@@ -5,16 +5,20 @@ local utf8 = require "utf8"
 local re = require "aegisub.re"
 --local inspect = require "inspect"
 
-add_background_script_name = tr "Masaf/Add Backgrounds"
+add_background = tr "Masaf/Add Backgrounds"
 remove_background_lines = tr "Masaf/Remove all Background lines"
 
 ------------ Corrections -------------
 rtl_correction_script_name = tr "Masaf/Correction/Rtl Correction - All lines"
-rtl_correction_selected_line_script_name = tr "Masaf/Correction/Rtl Correction - Selected"
-undo_rtl_correction_script_name = tr "Masaf/Correction/Undo Rtl Correction - Selected"
-convert_numbers_to_english = tr "Masaf/Correction/Convert Numbers to English"
-convert_numbers_to_arabic = tr "Masaf/Correction/Convert Numbers to Arabic"
-convert_numbers_to_persian = tr "Masaf/Correction/Convert Numbers to Persian"
+rtl_correction_selected_line = tr "Masaf/Correction/Rtl Correction - Selected lines"
+add_rle = tr "Masaf/Correction/Add RLE - Selected lines"
+undo_rtl_correction = tr "Masaf/Correction/Undo Rtl Correction - Selected lines"
+convert_numbers_to_english = tr "Masaf/Correction/Numbers to English"
+convert_numbers_to_arabic = tr "Masaf/Correction/Numbers to Arabic"
+convert_numbers_to_persian = tr "Masaf/Correction/Numbers to Persian"
+selected_numbers_to_english = tr "Masaf/Correction/Selected Numbers to English"
+selected_numbers_to_arabic = tr "Masaf/Correction/Selected Numbers to Arabic"
+selected_numbers_to_persian = tr "Masaf/Correction/Selected Numbers to Persian"
 
 ------------ Timing -------------
 shift_start_line_forward = tr "Masaf/Timing/Shift start line forward"
@@ -22,6 +26,9 @@ shift_start_line_backward = tr "Masaf/Timing/Shift start line backward"
 shift_end_line_forward = tr "Masaf/Timing/Shift end line forward"
 shift_end_line_backward = tr "Masaf/Timing/Shift end line backward"
 make_next_line_continuous = tr "Masaf/Timing/Make next line continuous"
+make_same_time = tr "Masaf/Timing/Make Same time"
+make_same_start_time = tr "Masaf/Timing/Make Same Start time"
+make_same_end_time = tr "Masaf/Timing/Make Same End time"
 
 ------------ Text Movements -------------
 move_last_text_part = tr "Masaf/Text Movement/Move last text part"
@@ -55,7 +62,7 @@ display_sum_of_times = tr "Masaf/Misc/Display sum of times"
 
 script_description = tr "Some Aegisub automation scripts specially designed for Right-To-Left language subtitles"
 script_author = "Majid Shamkhani"
-script_version = "1.22.3"
+script_version = "1.23.0"
 
 -- <<<<<<<<<<<<<<<<<<<<<<<<< Main Methods >>>>>>>>>>>>>>>>>>>>>>>>>
 
@@ -63,8 +70,8 @@ script_version = "1.22.3"
 
 BgPatternRegex =
 	[[\{\\p1\\pos\(.*?\)\}m (\d+(\.\d+)?) (\d+(\.\d+)?) l (\d+(\.\d+)?) (\d+(\.\d+)?) l (\d+(\.\d+)?) (\d+(\.\d+)?) l (\d+(\.\d+)?) (\d+(\.\d+)?) l (\d+(\.\d+)?) (\d+(\.\d+)?)]]
-PosPattern = "^{\\pos%(.-%)}"
-BgPosPattern = "^{\\p1\\pos%(.-%)}"
+PosPattern = "{\\pos%(.-%)}"
+BgPosPattern = "{\\p1\\pos%(.-%)}"
 SplitChars = {"||", "\\N", "%.", ",", "،", ";", "%?", "؟", "!", ":", "؛", "۔"}
 
 RleChar = utf8.char(0x202B)
@@ -166,7 +173,7 @@ function AddBackground(subs)
 		setLastGroupBackgroundEndTime(subs, groupBackgroundIndex, periorEndTime)
 	end
 
-	aegisub.set_undo_point(add_background_script_name)
+	aegisub.set_undo_point(add_background)
 end
 
 ------------------------------ Split Line -----------------------------
@@ -334,33 +341,51 @@ end
 ------------------------- Rtl Corrector Selected Line -----------------------
 
 function RtlCorrectorSelectedLine(subs, selected)
-	if #selected > 1 then
-		return
+	for i = 1, #selected, 1 do
+		local line = subs[selected[i]]
+
+		-- start processing lines
+
+		if (not isBackgroundLine(line)) then
+			line.text = rtlCorrectIfAllowed(line.text)
+			subs[selected[i]] = line
+		end
 	end
 
-	local line = subs[selected[1]]
+	aegisub.set_undo_point(rtl_correction_selected_line)
+end
 
-	-- start processing lines
+---------------------- Add RLE -----------------------
 
-	if (not isBackgroundLine(line)) then
-		line.text = rtlCorrectIfAllowed(line.text)
-		subs[selected[1]] = line
+function AddRle(subs, selected)
+	for i = 1, #selected, 1 do
+		local line = subs[selected[i]]
+
+		-- start processing lines
+
+		if (not isBackgroundLine(line)) then
+			local text, code = removeRtlChars(line.text), ""
+			local textParts = getSubtitleTextParts(text)
+			code, text = getCodeAndPlainTextPart(text, textParts)
+			text = addRleToBeginigOfLine(text)
+
+			line.text = code .. text
+			subs[selected[i]] = line
+		end
 	end
 
-	aegisub.set_undo_point(rtl_correction_selected_line_script_name)
+	aegisub.set_undo_point(add_rle)
 end
 
 ------------------------------ Undo Rtl Correction ----------------------------
 
 function UndoRtlCorrection(subs, selected)
-	if #selected > 1 then
-		return
+	for i = 1, #selected, 1 do
+		local line = subs[selected[i]]
+		line.text = removeRtlChars(line.text)
+		subs[selected[i]] = line
 	end
-	local line = subs[selected[1]]
-	line.text = removeRtlChars(line.text)
-	subs[selected[1]] = line
-
-	aegisub.set_undo_point(undo_rtl_correction_script_name)
+	aegisub.set_undo_point(undo_rtl_correction)
 end
 
 ------------------------------ Show Rtl Editor ---------------------------------
@@ -435,14 +460,12 @@ end
 
 --------------------------- Remove line Breaks ------------------------------
 function RemoveLineBreaks(subs, selected)
-	if #selected > 1 then
-		return
+	for i = 1, #selected, 1 do
+		local line = subs[selected[i]]
+		line.text = utf8.gsub(line.text, "\\N", " ")
+		line.text = removeDoubleSpace(line.text)
+		subs[selected[i]] = line
 	end
-	local line = subs[selected[1]]
-	line.text = utf8.gsub(line.text, "\\N", " ")
-	line.text = removeDoubleSpace(line.text)
-	subs[selected[1]] = line
-
 	aegisub.set_undo_point(remove_line_break_script_name)
 end
 
@@ -515,6 +538,46 @@ function MakeNextLineContinuous(subs, selected)
 	selected = {index + 1}
 	aegisub.set_undo_point(make_next_line_continuous)
 	return selected
+end
+
+function MakeSameTime(subs, selected)
+	if #selected < 2 then
+		return
+	end
+	local firstLine = subs[selected[1]]
+	for i = 2, #selected, 1 do
+		local l = subs[selected[i]]
+		l.start_time = firstLine.start_time
+		l.end_time = firstLine.end_time
+		subs[selected[i]] = l
+	end
+	aegisub.set_undo_point(make_same_time)
+end
+
+function MakeSameStartTime(subs, selected)
+	if #selected < 2 then
+		return
+	end
+	local firstLine = subs[selected[1]]
+	for i = 2, #selected, 1 do
+		local l = subs[selected[i]]
+		l.start_time = firstLine.start_time
+		subs[selected[i]] = l
+	end
+	aegisub.set_undo_point(make_same_start_time)
+end
+
+function MakeSameEndTime(subs, selected)
+	if #selected < 2 then
+		return
+	end
+	local firstLine = subs[selected[1]]
+	for i = 2, #selected, 1 do
+		local l = subs[selected[i]]
+		l.end_time = firstLine.end_time
+		subs[selected[i]] = l
+	end
+	aegisub.set_undo_point(make_same_end_time)
 end
 
 ---------------------- Start/End line shifter -------------------------
@@ -787,7 +850,7 @@ function ConvertNumbersToEnglish(subs)
 	while i < n do
 		i = i + 1
 		local l = subs[i]
-		if l.class == "dialogue" and l.effect == "" and not l.comment and canCorrectRtl(l.text) then
+		if l.class == "dialogue" and l.effect == "" and not l.comment then
 			if not isBackgroundLine(l) then
 				local parts = getSubtitleTextParts(l.text)
 				local text = ""
@@ -805,6 +868,28 @@ function ConvertNumbersToEnglish(subs)
 	aegisub.set_undo_point(convert_numbers_to_english)
 end
 
+function SelectedNumbersToEnglish(subs, selected)
+	for i = 1, #selected, 1 do
+		local l = subs[selected[i]]
+
+		if l.class == "dialogue" and l.effect == "" and not l.comment then
+			if not isBackgroundLine(l) then
+				local parts = getSubtitleTextParts(l.text)
+				local text = ""
+				for k = 1, #parts do
+					local t = parts[k]
+					t = applyNumbersToEnglish(t)
+					text = text .. t
+				end
+				l.text = text
+				subs[selected[i]] = l
+			end
+		end
+	end
+
+	aegisub.set_undo_point(selected_numbers_to_english)
+end
+
 function ConvertNumbersToArabic(subs)
 	local i, n = 0
 	n = subs.n
@@ -812,7 +897,7 @@ function ConvertNumbersToArabic(subs)
 	while i < n do
 		i = i + 1
 		local l = subs[i]
-		if l.class == "dialogue" and l.effect == "" and not l.comment and canCorrectRtl(l.text) then
+		if l.class == "dialogue" and l.effect == "" and not l.comment then
 			if not isBackgroundLine(l) then
 				local parts = getSubtitleTextParts(l.text)
 				local text = ""
@@ -830,6 +915,28 @@ function ConvertNumbersToArabic(subs)
 	aegisub.set_undo_point(convert_numbers_to_arabic)
 end
 
+function SelectedNumbersToArabic(subs, selected)
+	for i = 1, #selected, 1 do
+		local l = subs[selected[i]]
+
+		if l.class == "dialogue" and l.effect == "" and not l.comment then
+			if not isBackgroundLine(l) then
+				local parts = getSubtitleTextParts(l.text)
+				local text = ""
+				for k = 1, #parts do
+					local t = parts[k]
+					t = applyNumbersToArabic(t)
+					text = text .. t
+				end
+				l.text = text
+				subs[selected[i]] = l
+			end
+		end
+	end
+
+	aegisub.set_undo_point(selected_numbers_to_arabic)
+end
+
 function ConvertNumbersToPersian(subs)
 	local i, n = 0
 	n = subs.n
@@ -837,7 +944,7 @@ function ConvertNumbersToPersian(subs)
 	while i < n do
 		i = i + 1
 		local l = subs[i]
-		if l.class == "dialogue" and l.effect == "" and not l.comment and canCorrectRtl(l.text) then
+		if l.class == "dialogue" and l.effect == "" and not l.comment then
 			if not isBackgroundLine(l) then
 				local parts = getSubtitleTextParts(l.text)
 				local text = ""
@@ -853,6 +960,28 @@ function ConvertNumbersToPersian(subs)
 	end
 
 	aegisub.set_undo_point(convert_numbers_to_arabic)
+end
+
+function SelectedNumbersToPersian(subs, selected)
+	for i = 1, #selected, 1 do
+		local l = subs[selected[i]]
+
+		if l.class == "dialogue" and l.effect == "" and not l.comment then
+			if not isBackgroundLine(l) then
+				local parts = getSubtitleTextParts(l.text)
+				local text = ""
+				for k = 1, #parts do
+					local t = parts[k]
+					t = applyNumbersToPersian(t)
+					text = text .. t
+				end
+				l.text = text
+				subs[selected[i]] = l
+			end
+		end
+	end
+
+	aegisub.set_undo_point(selected_numbers_to_persian)
 end
 
 function FixLinePosition(subs, selected)
@@ -1329,6 +1458,14 @@ function addRleToEachNoneAlphabeticChars(s)
 	return RleChar .. replaced
 end
 
+function addRleToBeginigOfLine(s)
+	if isRtl(s) then
+		s = utf8.gsub(s, "\\N", "\\N" .. RleChar)
+		return RleChar .. s
+	end
+	return s
+end
+
 function removeSpacesBeforePunctuationMarks(s)
 	local pattern = "(%s+)([{" .. PunctuationMarks .. "}])"
 	local replaced = s
@@ -1783,54 +1920,85 @@ end
 
 ------------------------------ End of methods ------------------------------
 
-aegisub.register_macro(add_background_script_name, tr "Adds background before every line", AddBackground)
+aegisub.register_macro(add_background, tr "Adds background shape for subtitles", AddBackground)
 aegisub.register_macro(remove_background_lines, tr "Remove all Background lines", RemoveBackgroundLines)
 
 ------------ Corrections -------------
-aegisub.register_macro(rtl_correction_script_name, tr "Corercts Rtl display problem for all lines", RtlCorrection)
-aegisub.register_macro(undo_rtl_correction_script_name, tr "Undo Rtl correction", UndoRtlCorrection)
+aegisub.register_macro(rtl_correction_script_name, tr "Correct Rtl display problems for all lines", RtlCorrection)
 aegisub.register_macro(
-	rtl_correction_selected_line_script_name,
-	tr "Corercts Rtl display problem for selected line",
+	rtl_correction_selected_line,
+	tr "Corrert Rtl display problems for selected lines",
 	RtlCorrectorSelectedLine
 )
-aegisub.register_macro(convert_numbers_to_english, tr "Convert Numbers to English", ConvertNumbersToEnglish)
-aegisub.register_macro(convert_numbers_to_arabic, tr "Convert Numbers to Arabic", ConvertNumbersToArabic)
-aegisub.register_macro(convert_numbers_to_persian, tr "Convert Numbers to Persian", ConvertNumbersToPersian)
+aegisub.register_macro(add_rle, tr "Add RLE Control character to beginig of selected line", AddRle)
+aegisub.register_macro(undo_rtl_correction, tr "Undo Rtl correction", UndoRtlCorrection)
+aegisub.register_macro(convert_numbers_to_english, tr "Convert all numbers to English numbers", ConvertNumbersToEnglish)
+aegisub.register_macro(convert_numbers_to_arabic, tr "Convert all numbers to Arabic numbers", ConvertNumbersToArabic)
+aegisub.register_macro(convert_numbers_to_persian, tr "Convert all numbers to Persian numbers", ConvertNumbersToPersian)
+aegisub.register_macro(
+	selected_numbers_to_english,
+	tr "Convert selected line numbers to English numbers",
+	SelectedNumbersToEnglish
+)
+aegisub.register_macro(
+	selected_numbers_to_arabic,
+	tr "Convert selected line numbers to Arabic numbers",
+	SelectedNumbersToArabic
+)
+aegisub.register_macro(
+	selected_numbers_to_persian,
+	tr "Convert selected line numbers to Persian numbers",
+	SelectedNumbersToPersian
+)
 
 ------------ Timing -------------
-aegisub.register_macro(shift_start_line_forward, tr "Shift start line forward", ShiftStartLineForward)
-aegisub.register_macro(shift_start_line_backward, tr "Shift start line backward", ShiftStartLineBackward)
-aegisub.register_macro(shift_end_line_forward, tr "Shift end line forward", ShiftEndLineForward)
-aegisub.register_macro(shift_end_line_backward, tr "Shift end line backward", ShiftEndLineBackward)
-aegisub.register_macro(make_next_line_continuous, tr "Make next line continuous", MakeNextLineContinuous)
+aegisub.register_macro(shift_start_line_forward, tr "Shift line start time forward", ShiftStartLineForward)
+aegisub.register_macro(shift_start_line_backward, tr "Shift line start time backward", ShiftStartLineBackward)
+aegisub.register_macro(shift_end_line_forward, tr "Shift line end time forward", ShiftEndLineForward)
+aegisub.register_macro(shift_end_line_backward, tr "Shift line end time backward", ShiftEndLineBackward)
+aegisub.register_macro(
+	make_next_line_continuous,
+	tr "Make next line continuous with current line",
+	MakeNextLineContinuous
+)
+aegisub.register_macro(make_same_time, tr "Make same time", MakeSameTime)
+aegisub.register_macro(make_same_start_time, tr "Make same start time", MakeSameStartTime)
+aegisub.register_macro(make_same_end_time, tr "Make same end time", MakeSameEndTime)
 
 ------------ Text Movements -------------
-aegisub.register_macro(move_last_text_part, tr "Move last text part", MoveLastTextPart)
-aegisub.register_macro(move_first_part_of_next, tr "Move first part of next", MoveFirstPartOfNext)
-aegisub.register_macro(move_last_word, tr "Move last word", MoveLastWord)
-aegisub.register_macro(move_first_word_of_next, tr "Move first word of next", MoveFirstWordOfNext)
-aegisub.register_macro(shift_line_break, tr "Shift Linebreak", ShiftLineBreak)
-aegisub.register_macro(shift_line_break_back, tr "Shift Linebreak Back", ShiftLineBreakBack)
+aegisub.register_macro(move_last_text_part, tr "Move last text part to next line", MoveLastTextPart)
+aegisub.register_macro(move_first_part_of_next, tr "Move first part of next line to current line", MoveFirstPartOfNext)
+aegisub.register_macro(move_last_word, tr "Move last word to next line", MoveLastWord)
+aegisub.register_macro(move_first_word_of_next, tr "Move first word of next line to current line", MoveFirstWordOfNext)
+aegisub.register_macro(shift_line_break, tr "Shift Linebreak forward", ShiftLineBreak)
+aegisub.register_macro(shift_line_break_back, tr "Shift Linebreak back", ShiftLineBreakBack)
 
-aegisub.register_macro(split_script_name, tr "Split selected lines", Split)
+aegisub.register_macro(split_script_name, tr "Split selected line", Split)
 aegisub.register_macro(split_at_index_script_name, tr "Split selected line at index", SplitAtIndex)
-aegisub.register_macro(break_semi_long_lines, tr "Break Semi Long lines", BreakSemiLongLines)
+aegisub.register_macro(break_semi_long_lines, tr "Break Semi-Long lines", BreakSemiLongLines)
 aegisub.register_macro(break_selected_line, tr "Break Selected line", BreakSelectedLine)
 aegisub.register_macro(show_rtl_editor_script_name, tr "Show Rtl editor", ShowRtlEditor)
 aegisub.register_macro(remove_line_break_script_name, tr "Remove line Breaks", RemoveLineBreaks)
-aegisub.register_macro(remove_position_tags, tr "Remove Position tags", RemovePositionTags)
-aegisub.register_macro(select_playing_line, tr "Select playing line", SelectPlayingLine)
+aegisub.register_macro(remove_position_tags, tr "Remove all position tags", RemovePositionTags)
+aegisub.register_macro(select_playing_line, tr "Select current playing line", SelectPlayingLine)
 aegisub.register_macro(generate_srt_like_text, tr "Generate SRT like text", GenerateSrtLikeText)
 
 ------------ Special Tags ------------
-aegisub.register_macro(fix_line_position, tr "Fix line Position", FixLinePosition)
-aegisub.register_macro(set_line_as_no_background, tr "Set line as No Background", SetLineAsNoBackground)
-aegisub.register_macro(set_line_as_dont_correct_rtl, tr "Set line as Don't Correct RTL", SetLineAsDontCorrectRtl)
-aegisub.register_macro(set_line_as_dont_remove, tr "Set line as Don't Remove", SetLineAsDontRemove)
+aegisub.register_macro(fix_line_position, tr "Prevent automatic change position by script", FixLinePosition)
+aegisub.register_macro(
+	set_line_as_no_background,
+	tr "Prevent automatic background generation by script",
+	SetLineAsNoBackground
+)
+aegisub.register_macro(
+	set_line_as_dont_correct_rtl,
+	tr "Prevent automatic Rtl correction by script",
+	SetLineAsDontCorrectRtl
+)
+aegisub.register_macro(set_line_as_dont_remove, tr "Prevent automatic line deletion by script", SetLineAsDontRemove)
 
 ------------ Miscs ------------
-aegisub.register_macro(unify_background_lines_script_name, tr "Unify Background Lines", UnifyBackgroundLines)
-aegisub.register_macro(add_code_to_selected_lines_script_name, tr "Add Code To Selected Lines", AddCodeToSelectedLines)
+aegisub.register_macro(unify_background_lines_script_name, tr "Unify background lines", UnifyBackgroundLines)
+aegisub.register_macro(add_code_to_selected_lines_script_name, tr "Add code to selected lines", AddCodeToSelectedLines)
 aegisub.register_macro(import_text_to_selected_lines, tr "Import text to selected lines", ImportTextToSelectedLines)
 aegisub.register_macro(display_sum_of_times, tr "Display sum of times", DisplaySumOfTimes)
