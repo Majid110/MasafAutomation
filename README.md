@@ -10,6 +10,7 @@ Some Aegisub automation scripts specially designed for Right-To-Left language su
 - Remove all Background lines
 - Rtl Correction - All lines
 - Rtl Correction - Selected
+- Rtl Correction without normalize
 - Add RLE - Selected lines
 - Undo Rtl Correction - Selected
 - Numbers to English

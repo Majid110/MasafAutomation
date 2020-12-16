@@ -11,6 +11,7 @@ remove_background_lines = tr "Masaf/Remove all Background lines"
 ------------ Corrections -------------
 rtl_correction_script_name = tr "Masaf/Correction/Rtl Correction - All lines"
 rtl_correction_selected_line = tr "Masaf/Correction/Rtl Correction - Selected lines"
+rtl_correction_without_normalize = tr "Masaf/Correction/Rtl Correction without normalize"
 add_rle = tr "Masaf/Correction/Add RLE - Selected lines"
 undo_rtl_correction = tr "Masaf/Correction/Undo Rtl Correction - Selected lines"
 convert_numbers_to_english = tr "Masaf/Correction/Numbers to English"
@@ -62,7 +63,7 @@ display_sum_of_times = tr "Masaf/Misc/Display sum of times"
 
 script_description = tr "Some Aegisub automation scripts specially designed for Right-To-Left language subtitles"
 script_author = "Majid Shamkhani"
-script_version = "1.23.0"
+script_version = "1.24.0"
 
 -- <<<<<<<<<<<<<<<<<<<<<<<<< Main Methods >>>>>>>>>>>>>>>>>>>>>>>>>
 
@@ -305,7 +306,7 @@ end
 
 --------------------------- RtlCorrection ---------------------
 
-local SpecialChars = [[%.,،%?؟«»!%-:]]
+local SpecialChars = [[%.,،%?؟«»!:٪×~÷;%^/%+%-=;%*%$%%]]
 local PunctuationMarks = [[%.,،%?؟:؛!;۔]]
 local PunctuationMarksRegex = "[\\.,،\\?؟:؛!;۔]+"
 local StartingBracketChars = [[%({%[<«“]]
@@ -353,6 +354,23 @@ function RtlCorrectorSelectedLine(subs, selected)
 	end
 
 	aegisub.set_undo_point(rtl_correction_selected_line)
+end
+
+------------------------- Rtl Corrector without Normalize -----------------------
+
+function RtlCorrectorWithoutNormalize(subs, selected)
+	for i = 1, #selected, 1 do
+		local line = subs[selected[i]]
+
+		-- start processing lines
+
+		if (not isBackgroundLine(line)) then
+			line.text = rtlCorrectTextWithCode(line.text, true)
+			subs[selected[i]] = line
+		end
+	end
+
+	aegisub.set_undo_point(rtl_correction_without_normalize)
 end
 
 ---------------------- Add RLE -----------------------
@@ -1453,7 +1471,7 @@ function addRleToEachNoneAlphabeticChars(s)
 	local pattern = "([{" .. SpecialChars .. "}])"
 
 	-- Start of right to left embeding character
-	local replaced = utf8.gsub(s, pattern, PdfChar .. RleChar .. "%1" .. PdfChar .. RleChar)
+	local replaced = utf8.gsub(s, pattern, RleChar .. "%1" .. PdfChar)
 	replaced = utf8.gsub(replaced, "\\N", "\\N" .. RleChar)
 	return RleChar .. replaced
 end
@@ -1607,16 +1625,18 @@ function getSubtitleTextParts(s)
 	return parts
 end
 
-function rtlCorrectNonCodeText(s)
+function rtlCorrectNonCodeText(s, noNormalize)
 	if utf8.match(s, CodePattern) == nil then
-		s = removeRtlChars(s)
-		s = removeDoubleSpace(s)
-		s = removeSpacesBeforePunctuationMarks(s)
-		s = addRequiredSpaceAfterPunctuationMarks(s)
-		s = addRequiredSpaceBeforeStartingBrackets(s)
-		s = removeSpaceAfterStartingBrackets(s)
-		s = removeSpaceBeforeEndingBrackets(s)
-		s = addRequiredSpaceAfterEndingBrackets(s)
+		if not noNormalize then
+			s = removeRtlChars(s)
+			s = removeDoubleSpace(s)
+			s = removeSpacesBeforePunctuationMarks(s)
+			s = addRequiredSpaceAfterPunctuationMarks(s)
+			s = addRequiredSpaceBeforeStartingBrackets(s)
+			s = removeSpaceAfterStartingBrackets(s)
+			s = removeSpaceBeforeEndingBrackets(s)
+			s = addRequiredSpaceAfterEndingBrackets(s)
+		end
 		if isRtl(s) then
 			s = addRleToEachNoneAlphabeticChars(s)
 		end
@@ -1630,12 +1650,12 @@ function canCorrectRtl(text)
 	return canCorrect
 end
 
-function rtlCorrectTextWithCode(s)
+function rtlCorrectTextWithCode(s, noNormalize)
 	local parts = getSubtitleTextParts(s)
 	local text = ""
 	for k = 1, #parts do
 		local t = parts[k]
-		t = rtlCorrectNonCodeText(t)
+		t = rtlCorrectNonCodeText(t, noNormalize)
 		text = text .. t
 	end
 	return text
@@ -1929,6 +1949,11 @@ aegisub.register_macro(
 	rtl_correction_selected_line,
 	tr "Corrert Rtl display problems for selected lines",
 	RtlCorrectorSelectedLine
+)
+aegisub.register_macro(
+	rtl_correction_without_normalize,
+	tr "Corrert Rtl display problems for selected lines without normalize text",
+	RtlCorrectorWithoutNormalize
 )
 aegisub.register_macro(add_rle, tr "Add RLE Control character to beginig of selected line", AddRle)
 aegisub.register_macro(undo_rtl_correction, tr "Undo Rtl correction", UndoRtlCorrection)
