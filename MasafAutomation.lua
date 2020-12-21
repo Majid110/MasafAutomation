@@ -63,18 +63,24 @@ display_sum_of_times = tr "Masaf/Misc/Display sum of times"
 
 script_description = tr "Some Aegisub automation scripts specially designed for Right-To-Left language subtitles"
 script_author = "Majid Shamkhani"
-script_version = "1.24.0"
+script_version = "1.24.1"
 
 -- <<<<<<<<<<<<<<<<<<<<<<<<< Main Methods >>>>>>>>>>>>>>>>>>>>>>>>>
-
--- ------------------------- AddBackground ---------------------
 
 BgPatternRegex =
 	[[\{\\p1\\pos\(.*?\)\}m (\d+(\.\d+)?) (\d+(\.\d+)?) l (\d+(\.\d+)?) (\d+(\.\d+)?) l (\d+(\.\d+)?) (\d+(\.\d+)?) l (\d+(\.\d+)?) (\d+(\.\d+)?) l (\d+(\.\d+)?) (\d+(\.\d+)?)]]
 PosPattern = "{\\pos%(.-%)}"
 BgPosPattern = "{\\p1\\pos%(.-%)}"
 SplitChars = {"||", "\\N", "%.", ",", "،", ";", "%?", "؟", "!", ":", "؛", "۔"}
+WeakChars = "~!@#\\$%\\^&\\*\\-\\+=;\\|×÷٪\\?؟\\\\"
+PunctuationMarks = [[%.,،%?؟:؛!;۔]]
+PunctuationMarksRegex = "[\\.,،\\?؟:؛!;۔]+"
+StartingBracketChars = [[%({%[<«“]]
+EndingsBracketChars = [[%)}%]>»”]]
+CodePattern = "({.-})"
+LastPunctuationMark = "([\\.,\\?!؟:،۔؛]\\s*$)"
 
+LreChar = utf8.char(0x202A)
 RleChar = utf8.char(0x202B)
 PdfChar = utf8.char(0x202C)
 
@@ -82,6 +88,8 @@ FixedPosTag = "\\fixedpos"
 NoBgTag = "\\nobg" -- No Background
 DcrtlTag = "\\dcrtl" -- Dont Correct RTL
 Drl = "\\drl" -- Dont Remove Line
+
+-- ------------------------- AddBackground ---------------------
 
 function AddBackground(subs)
 	if not videoLoaded() then
@@ -305,13 +313,6 @@ function BreakSelectedLine(subs, selected)
 end
 
 --------------------------- RtlCorrection ---------------------
-
-local SpecialChars = [[%.,،%?؟«»!:٪×~÷;%^/%+%-=;%*%$%%]]
-local PunctuationMarks = [[%.,،%?؟:؛!;۔]]
-local PunctuationMarksRegex = "[\\.,،\\?؟:؛!;۔]+"
-local StartingBracketChars = [[%({%[<«“]]
-local EndingsBracketChars = [[%)}%]>»”]]
-local CodePattern = "({.-})"
 
 function RtlCorrection(subs)
 	-- start processing lines
@@ -1456,22 +1457,23 @@ end
 ----------------------- Rtl Correction Methods ---------------------
 
 function removeRtlChars(s)
-	local lreChar = utf8.char(0x202A)
 	local lroChar = utf8.char(0x202D)
 	local rloChar = utf8.char(0x202E)
 	local replaced = utf8.gsub(s, RleChar, "")
-	local replaced = utf8.gsub(replaced, PdfChar, "")
-	local replaced = utf8.gsub(replaced, lreChar, "")
-	local replaced = utf8.gsub(replaced, lroChar, "")
-	local replaced = utf8.gsub(replaced, rloChar, "")
+	replaced = utf8.gsub(replaced, PdfChar, "")
+	replaced = utf8.gsub(replaced, LreChar, "")
+	replaced = utf8.gsub(replaced, lroChar, "")
+	replaced = utf8.gsub(replaced, rloChar, "")
 	return replaced
 end
 
 function addRleToEachNoneAlphabeticChars(s)
-	local pattern = "([{" .. SpecialChars .. "}])"
+	-- All weak characters enclosed between numbers
+	local weakCharsWithinNumbers = "(\\d)([" .. WeakChars .. "])(\\d)"
+	local replaced = re.sub(s, weakCharsWithinNumbers, "\\1" .. RleChar .. "\\2" .. PdfChar .. "\\3")
 
-	-- Start of right to left embeding character
-	local replaced = utf8.gsub(s, pattern, RleChar .. "%1" .. PdfChar)
+	-- Make last punctuation mark RTL
+	replaced = re.sub(replaced, LastPunctuationMark, PdfChar .. RleChar .. "\\1")
 	replaced = utf8.gsub(replaced, "\\N", "\\N" .. RleChar)
 	return RleChar .. replaced
 end
@@ -1599,7 +1601,7 @@ end
 function getSubtitleTextParts(s)
 	local text = s
 	local parts = {}
-	local p1 = "^({.-})"
+	local p1 = "^(%s*{.-})"
 	local p2 = "^(.-)({.-})"
 	local p3 = "({.-})"
 
