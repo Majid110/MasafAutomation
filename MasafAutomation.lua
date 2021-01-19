@@ -63,7 +63,7 @@ display_sum_of_times = tr "Masaf/Misc/Display sum of times"
 
 script_description = tr "Some Aegisub automation scripts specially designed for Right-To-Left language subtitles"
 script_author = "Majid Shamkhani"
-script_version = "1.24.2"
+script_version = "1.24.3"
 
 -- <<<<<<<<<<<<<<<<<<<<<<<<< Main Methods >>>>>>>>>>>>>>>>>>>>>>>>>
 
@@ -277,6 +277,9 @@ function SplitAtIndex(subs, selected)
 end
 
 function BreakSemiLongLines(subs)
+	if not videoLoaded() then
+		return
+	end
 	local i, n = 0, #subs
 	local meta, styles = karaskel.collect_head(subs)
 	local videoWidth = getVideoWidth()
@@ -1259,7 +1262,7 @@ end
 function videoLoaded()
 	local w = getVideoWidth()
 	if w == nil then
-		showMessage([[There is no loaded video. 
+		showMessage([[No video loaded. 
 Please "Open Video..." or "Use Dummy Video..." and try again.]])
 		return false
 	end
