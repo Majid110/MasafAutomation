@@ -68,9 +68,9 @@ script_version = "1.24.3"
 -- <<<<<<<<<<<<<<<<<<<<<<<<< Main Methods >>>>>>>>>>>>>>>>>>>>>>>>>
 
 BgPatternRegex =
-	[[\{\\p1\\pos\(.*?\)\}m (\d+(\.\d+)?) (\d+(\.\d+)?) l (\d+(\.\d+)?) (\d+(\.\d+)?) l (\d+(\.\d+)?) (\d+(\.\d+)?) l (\d+(\.\d+)?) (\d+(\.\d+)?) l (\d+(\.\d+)?) (\d+(\.\d+)?)]]
+	[[\{\\p1.*?\}m (\d+(\.\d+)?) (\d+(\.\d+)?) l (\d+(\.\d+)?) (\d+(\.\d+)?) l (\d+(\.\d+)?) (\d+(\.\d+)?) l (\d+(\.\d+)?) (\d+(\.\d+)?) l (\d+(\.\d+)?) (\d+(\.\d+)?)]]
 PosPattern = "{\\pos%(.-%)}"
-BgPosPattern = "{\\p1\\pos%(.-%)}"
+BgPosPattern = "\\pos%(.-%)"
 SplitChars = {"||", "\\N", "%.", ",", "،", ";", "%?", "؟", "!", ":", "؛", "۔"}
 WeakChars = "~!@#\\$%\\^&\\*\\-\\+=;\\|×÷٪\\?؟\\\\"
 PunctuationMarks = [[%.,،%?؟:؛!;۔]]
@@ -1277,7 +1277,7 @@ end
 function getPositionTag(text)
 	local pos = string.match(text, BgPosPattern)
 	if pos ~= nil then
-		return string.gsub(pos, "\\p1", "")
+		return "{" .. pos .. "}"
 	end
 	return ""
 end
