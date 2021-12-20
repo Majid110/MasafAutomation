@@ -60,10 +60,11 @@ unify_background_lines_script_name = tr "Masaf/Misc/Unify Background lines"
 add_code_to_selected_lines_script_name = tr "Masaf/Misc/Add Code to Selected lines"
 import_text_to_selected_lines = tr "Masaf/Misc/Import text to selected Lines"
 display_sum_of_times = tr "Masaf/Misc/Display sum of times"
+go_to_line = tr "Masaf/Misc/Go to line"
 
 script_description = tr "Some Aegisub automation scripts specially designed for Right-To-Left language subtitles"
 script_author = "Majid Shamkhani"
-script_version = "1.25.0"
+script_version = "1.26.0"
 
 -- <<<<<<<<<<<<<<<<<<<<<<<<< Main Methods >>>>>>>>>>>>>>>>>>>>>>>>>
 
@@ -1087,6 +1088,29 @@ function ShiftLineBreakBack(subs, selected)
 	subs[selected[1]] = line
 	aegisub.set_undo_point(shift_line_break_back)
 end
+
+---------------------------- Go to line -------------------------
+
+function GoToLine(subs, selected)
+	local lineNumber, dialogOk =
+		getNumberFromUser("\r\n Enter Line number: \r\n", "")
+
+	if not dialogOk then
+		return
+	end	
+	local currentLine = 0
+	for i = 1, #subs do
+		local line = subs[i]
+		if line.class == "dialogue" then
+				currentLine = currentLine + 1
+				if currentLine == tonumber(lineNumber) then
+				selected = {i}
+			return selected
+			end
+		end
+	end
+end
+
 ------------------------- End of Main Methods -------------------
 
 -- <<<<<<<<<<<<<<<<<<<<< Related Methods >>>>>>>>>>>>>>>>>>>>>>>>
@@ -2036,3 +2060,4 @@ aegisub.register_macro(unify_background_lines_script_name, tr "Unify background 
 aegisub.register_macro(add_code_to_selected_lines_script_name, tr "Add code to selected lines", AddCodeToSelectedLines)
 aegisub.register_macro(import_text_to_selected_lines, tr "Import text to selected lines", ImportTextToSelectedLines)
 aegisub.register_macro(display_sum_of_times, tr "Display sum of times", DisplaySumOfTimes)
+aegisub.register_macro(go_to_line, tr "Go to line", GoToLine)

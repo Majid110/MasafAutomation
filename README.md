@@ -50,6 +50,7 @@ Some Aegisub automation scripts specially designed for Right-To-Left language su
 - Add Code to Selected lines
 - Import text to selected Lines
 - Display sum of times
+- Go to line
 
 ## Screenshots:
 
